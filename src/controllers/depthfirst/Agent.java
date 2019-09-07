@@ -36,6 +36,7 @@ public class Agent extends AbstractPlayer {
     protected int block_size;
 
     protected Stack<Types.ACTIONS> unreached = new Stack<Types.ACTIONS>();
+    protected ArrayList<StateObservation> reached_states = new ArrayList<StateObservation>();
 
     /**
      * Public constructor with state observation and time due.
@@ -58,6 +59,15 @@ public class Agent extends AbstractPlayer {
      * @return An action for the current state
      */
     public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
+
+        StateObservation stCopy_0 = stateObs.copy();
+        reached_states.add(stCopy_0);
+        System.out.println("For Debug:all contained positions:");
+        for(StateObservation one_step_obs : reached_states)
+        {
+
+            System.out.println(one_step_obs.getAvatarPosition());
+        }
 
         ArrayList<Observation>[] npcPositions = stateObs.getNPCPositions();
         // System.out.println(npcPositions);
@@ -94,6 +104,7 @@ public class Agent extends AbstractPlayer {
         {
             unreached.push(possible_action);
         }
+        main:
         while(remaining > 2*avgTimeTaken && remaining > remainingLimit)
         {
             ElapsedCpuTimer elapsedTimerIteration = new ElapsedCpuTimer();
@@ -114,20 +125,33 @@ public class Agent extends AbstractPlayer {
             action = unreached.pop();
             System.out.println(action);
             stCopy.advance(action);
+            System.out.println("For Debug:After action:");
+            System.out.println(stCopy.getAvatarPosition());
             if(stCopy.isGameOver())
             {
                 stCopy = stateObs.copy();
                 System.out.println("Game Over; rechoose action");
                 continue;
             }
-            else if(stateObs.equalPosition(stCopy))
-            {
-                stCopy = stateObs.copy();
-                System.out.println("Same Position; rechoose action");
-                continue;
-            }
             else 
             {
+                if(stateObs.equalPosition(stCopy))
+                {
+                    stCopy = stateObs.copy();
+                    System.out.println("Same Position; rechoose action");
+                    continue;
+                }
+                for(StateObservation one_state_obs : reached_states)
+                {
+
+                    if(one_state_obs.equalPosition(stCopy))
+                    {
+                        stCopy = stateObs.copy();
+                        System.out.println("Same Position; rechoose action");
+                        continue main;
+                    }
+                }
+                
                 break;
             }
             
