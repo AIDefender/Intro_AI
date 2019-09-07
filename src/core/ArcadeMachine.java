@@ -43,8 +43,9 @@ public class ArcadeMachine
      */
     public static double playOneGame(String game_file, String level_file, String actionFile, int randomSeed)
     {
-        //String agentName = "tools.pathfinder.Agent";
-        String agentName = "controllers.human.Agent";
+        // String agentName = "tools.pathfinder.Agent";
+        String agentName = "controllers.depthfirst.Agent";
+        // String agentName = "controllers.sampleRandom.Agent";
         boolean visuals = true;
         return runOneGame(game_file, level_file, visuals, agentName, actionFile, randomSeed, true);
     }
