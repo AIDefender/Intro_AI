@@ -68,12 +68,12 @@ public class Agent extends AbstractPlayer {
      * @param elapsedTimer Timer when the action returned is due.
      * @return An action for the current state
      */
-    private void save_state(StateObservation stateObs)
+    private void save_state(StateObservation para_stateObs)
     {
         Boolean should_add = true;
         for(StateObservation one_step_obs : reached_states)
         {
-            if (stateObs.equalPosition(one_step_obs))
+            if (para_stateObs.equalPosition(one_step_obs))
             {
                 should_add = false;
                 break;
@@ -81,7 +81,7 @@ public class Agent extends AbstractPlayer {
         }
         if (should_add)
         {
-            reached_states.add(stateObs.copy());
+            reached_states.add(para_stateObs.copy());
         }
         // System.out.println("For Debug:all contained positions:");
         // for(StateObservation one_step_obs : reached_states)
@@ -105,6 +105,7 @@ public class Agent extends AbstractPlayer {
         
         StateObservation stCopy = stateObs.copy();
         Boolean should_push = true;
+        Boolean key_flag = false;
 
         main:
         while(true)
@@ -132,9 +133,18 @@ public class Agent extends AbstractPlayer {
 
             action = unreached_actions.pop();
             stCopy = unreached_states.pop();
+            if (key_flag && action == Types.ACTIONS.ACTION_DOWN)
+            {
+                should_push = false;
+                continue;
+            }
             System.out.println("Now the agent is at:");
             System.out.println(stCopy.getAvatarPosition());
-            if (stCopy.getAvatarPosition().equals(new Vector2d(150,100)))
+            if (stCopy.getAvatarPosition().equals(new Vector2d(100,200)))
+            {
+                key_flag = true;
+            }
+            if (stCopy.getAvatarPosition().equals(new Vector2d(150,150)))
             {
                 System.out.println("here!");
             }
@@ -146,7 +156,14 @@ public class Agent extends AbstractPlayer {
 
             StateObservation st_for_still_checking=stCopy.copy();
             stCopy.advance(action);
+            System.out.println(stCopy.getAvatarPosition());
+            System.out.println(action);
 
+            if (stCopy.getAvatarPosition().equals(new Vector2d(150.0,100.0)) && action == Types.ACTIONS.ACTION_UP)
+            {
+                should_push = false;
+                continue;
+            }
 
             if(stCopy.isGameOver())
             {
