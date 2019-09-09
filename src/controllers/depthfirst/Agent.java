@@ -68,6 +68,9 @@ public class Agent extends AbstractPlayer {
      * @param elapsedTimer Timer when the action returned is due.
      * @return An action for the current state
      */
+
+
+    // TODO:change it to act rationally
     private void save_state(StateObservation para_stateObs)
     {
         Boolean should_add = true;
