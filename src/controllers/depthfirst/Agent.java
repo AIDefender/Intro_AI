@@ -3,6 +3,10 @@ package controllers.depthfirst;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Stack;
+
+import com.sun.xml.internal.bind.v2.model.core.NonElement;
+import com.sun.xml.internal.ws.policy.sourcemodel.ModelNode.Type;
+
 import java.util.Queue;
 import java.util.LinkedList;
 import java.util.Random;
@@ -28,6 +32,7 @@ public class Agent extends AbstractPlayer {
      */
     protected Random randomGenerator;
 
+
     /**
      * Observation grid.
      */
@@ -43,11 +48,9 @@ public class Agent extends AbstractPlayer {
     // * 直接恢复到原来state再找动作
     // * Only once total search is needed
     // * 脑海中构想的action可以存在一个队列中;如果出现问题就清空这个队列
-    protected Stack<Types.ACTIONS> unreached_actions = new Stack<Types.ACTIONS>();
-    protected Stack<StateObservation> unreached_states = new Stack<StateObservation>();
+    protected Stack<Node> unreached_nodes = new Stack<Node>();
     protected ArrayList<StateObservation> reached_states = new ArrayList<StateObservation>();
-    protected Deque<Types.ACTIONS> searced_actions = new ArrayDeque<Types.ACTIONS>();
-
+    protected Stack<Types.ACTIONS> choosed_actions = new Stack<Types.ACTIONS>();
     /**
      * Public constructor with state observation and time due.
      * 
@@ -100,20 +103,27 @@ public class Agent extends AbstractPlayer {
     // }
 
     public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
-        if (!searced_actions.isEmpty()) {
-            System.out.println("using action in Deque");
-            Types.ACTIONS action_this_time = searced_actions.pollFirst();
-            return action_this_time;
-        }
         
+        if (!choosed_actions.empty())
+        {
+            return choosed_actions.pop();
+        }
+
         StateObservation stCopy = stateObs.copy();
+        // save_state(stCopy);
+        // save_state(stCopy);// Test the function to save state;seems good
+        StateObservation stCopy_of_Copy=stateObs.copy();
         Boolean should_push = true;
         Boolean key_flag = false;
+        Node poped_node = new Node();
+        poped_node.node_state = stateObs;
+        poped_node.node_action = null;
+        poped_node.father_node = null;
 
         main:
         while(true)
         {
-            
+            // stCopy_of_Copy = stCopy.copy();
             Types.ACTIONS action = null;
         
             ArrayList<Types.ACTIONS> actions = stCopy.getAvailableActions();
@@ -122,20 +132,24 @@ public class Agent extends AbstractPlayer {
             {
                 for(Types.ACTIONS possible_action : actions)
                 {
-                    unreached_actions.push(possible_action);
-                    unreached_states.push(stCopy);
+                    Node node = new Node();
+                    node.father_node = poped_node;
+                    node.node_state = stCopy;
+                    node.node_action = possible_action;
+                    unreached_nodes.push(node);
                 }
             }
-            
-            if (unreached_actions.empty())
+            stCopy_of_Copy = stCopy.copy();
+            if (unreached_nodes.empty())
             {
                 System.out.println("Stack Empty!!!");
-                // continue;
-                break;
+                continue;
+                // break;
             }
-
-            action = unreached_actions.pop();
-            stCopy = unreached_states.pop();
+            poped_node = unreached_nodes.pop();
+            action = poped_node.node_action;//!需要定义一个类,包含动作,状态,父节点等.直接pop一个对象即可
+            // action = Types.ACTIONS.ACTION_UP;//Test still check,Good
+            stCopy = poped_node.node_state;
             if (key_flag && action == Types.ACTIONS.ACTION_DOWN)
             {
                 should_push = false;
@@ -152,12 +166,10 @@ public class Agent extends AbstractPlayer {
                 System.out.println("here!");
             }
             
-            searced_actions.addFirst(action);
             save_state(stCopy);
 
-            System.out.println(action);
+            // System.out.println(action);
 
-            StateObservation st_for_still_checking=stCopy.copy();
             stCopy.advance(action);
             System.out.println(stCopy.getAvatarPosition());
             System.out.println(action);
@@ -175,16 +187,14 @@ public class Agent extends AbstractPlayer {
                     break;
                 }
                 should_push = false;
-                searced_actions.removeFirst();
                 System.out.println("Game Over; rechoose action");
                 continue;
             }
             else 
             {
-                if(st_for_still_checking.equalPosition(stCopy))
+                if(stCopy_of_Copy.equalPosition(stCopy))
                 {
                     should_push = false;
-                    searced_actions.removeFirst();
                     System.out.println("Same Position; rechoose action");
                     continue;
                 }
@@ -195,7 +205,6 @@ public class Agent extends AbstractPlayer {
                     if(one_state_obs.equalPosition(stCopy))
                     {
                         should_push = false;
-                        searced_actions.removeFirst();
                         System.out.println("Same Position; rechoose action");
                         continue main;
                     }
@@ -204,8 +213,42 @@ public class Agent extends AbstractPlayer {
             }
             
         }
-        Types.ACTIONS action = searced_actions.pollFirst();
-        return action;
+        // we finally break here;Now we get node.action as the final action to win the game
+        ArrayList<Types.ACTIONS> all_actions = new ArrayList<Types.ACTIONS>();
+        all_actions.add(Types.ACTIONS.ACTION_DOWN);
+        all_actions.add(Types.ACTIONS.ACTION_LEFT);
+        all_actions.add(Types.ACTIONS.ACTION_RIGHT);
+        all_actions.add(Types.ACTIONS.ACTION_UP);
+        Node current_node = poped_node;
+        Types.ACTIONS action_to_push = current_node.node_action;
+        StateObservation last_state = current_node.father_node.node_state;
+        while (true)
+        {
+            System.out.println("pos of father state");
+            System.out.println(last_state.getAvatarPosition());
+            System.out.println("pos of this state");
+            System.out.println(current_node.node_state.getAvatarPosition());
+            choosed_actions.push(action_to_push);
+            for(Types.ACTIONS action:all_actions)
+            {
+                last_state = current_node.father_node.node_state;
+                last_state.advance(action);
+                if (last_state.equalPosition(current_node.node_state))
+                {
+                    action_to_push = action;
+                    break;
+                }
+                
+            }
+            if (last_state.equalPosition(stateObs))
+            {
+                break;
+            }
+            current_node = current_node.father_node;
+        }
+
+        
+        return Types.ACTIONS.ACTION_DOWN;
     }
 
     /**

@@ -514,10 +514,10 @@ public class StateObservation {
         if(this.isGameOver() != other.isGameOver()) return false;
         if(this.getAvatarSpeed() != other.getAvatarSpeed()) return false;
 
-        System.out.println("In the function: this_positon");
-        System.out.println(this.getAvatarPosition());
-        System.out.println("In the function: object_positon");
-        System.out.println(other.getAvatarPosition());
+        // System.out.println("In the function: this_positon");
+        // System.out.println(this.getAvatarPosition());
+        // System.out.println("In the function: object_positon");
+        // System.out.println(other.getAvatarPosition());
         if(!this.getAvatarPosition().equals(other.getAvatarPosition())) return false;
 
         //Check resources
