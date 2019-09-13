@@ -1,4 +1,4 @@
-package controllers.depthfirst;
+package controllers.limitdepthfirst;
 import core.game.StateObservation;
 import ontology.Types;
 

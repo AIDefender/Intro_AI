@@ -1,4 +1,4 @@
-package controllers.depthfirst;
+package controllers.limitdepthfirst;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
