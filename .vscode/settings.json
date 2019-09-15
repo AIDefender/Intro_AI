@@ -2,5 +2,5 @@
     "java.dependency.packagePresentation": "flat",
     "java.configuration.updateBuildConfiguration": "interactive",
     "maven.view": "hierarchical",
-    "java.dependency.syncWithFolderExplorer": true
+    "java.dependency.syncWithFolderExplorer": false
 }
