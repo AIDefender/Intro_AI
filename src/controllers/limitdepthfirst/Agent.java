@@ -37,10 +37,14 @@ public class Agent extends AbstractPlayer {
      * block size
      */
     protected int block_size;
+    protected Vector2d goalpos;
+    protected Vector2d keypos;
 
     protected Stack<Node> unreached_nodes = new Stack<Node>();
     protected ArrayList<StateObservation> reached_states = new ArrayList<StateObservation>();
     protected Stack<Types.ACTIONS> choosed_actions = new Stack<Types.ACTIONS>();
+    protected int MAX_DEPTH = 10; // * 正常搜索的最大深度是11
+    protected int key_bonus = 1000000;
     /**
      * Public constructor with state observation and time due.
      * 
@@ -51,6 +55,11 @@ public class Agent extends AbstractPlayer {
         randomGenerator = new Random();
         grid = so.getObservationGrid();
         block_size = so.getBlockSize();
+        ArrayList<Observation>[] fixedPositions = so.getImmovablePositions();
+        ArrayList<Observation>[] movingPositions = so.getMovablePositions();
+        goalpos = fixedPositions[1].get(0).position; //目标的坐标
+        keypos = movingPositions[0].get(0).position;//钥匙的坐标
+        System.out.println("LimitdepthInitialized!!");
     }
 
     /**
@@ -79,6 +88,17 @@ public class Agent extends AbstractPlayer {
             reached_states.add(para_stateObs.copy());
         }
     }
+    private double heur_function(StateObservation stateObs, Boolean key_flag)
+    {
+        Vector2d state_vec = stateObs.getAvatarPosition();
+        if (key_flag)
+        {
+            return state_vec.dist(goalpos); 
+        }
+        state_vec.subtract(keypos);
+        return state_vec.dist(keypos);
+        // ! 这个启发函数的问题:他会直接把钥匙上面的箱子推下去
+    }
 
     public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
         
@@ -86,14 +106,26 @@ public class Agent extends AbstractPlayer {
         {
             return choosed_actions.pop();
         }
+        // * Re-initiate stack and record upon each step begins 
+        unreached_nodes = new Stack<Node>();
+        reached_states = new ArrayList<StateObservation>();
+        Boolean depth_break = false; 
+        Boolean win_break = false;
+        Boolean key_flag = false; 
+
+        // * Preparation
 
         StateObservation stCopy = stateObs.copy();
         StateObservation stCopy_of_Copy=stateObs.copy();
         Boolean should_push = true;
+        Types.ACTIONS heur_action = null;
+
+        // * initiate the root node 
         Node poped_node = new Node();
-        poped_node.node_state = stateObs;
+        poped_node.node_state = stateObs.copy();
         poped_node.node_action = null;
         poped_node.father_node = null;
+        poped_node.depth = 1;
 
         main:
         while(true)
@@ -109,6 +141,7 @@ public class Agent extends AbstractPlayer {
                     node.father_node = poped_node.clone();
                     node.node_state = stCopy.copy();//这个copy异常关键!
                     node.node_action = possible_action;
+                    node.depth = node.father_node.depth+1;
                     unreached_nodes.push(node);
                 }
             }
@@ -116,9 +149,40 @@ public class Agent extends AbstractPlayer {
             if (unreached_nodes.empty())
             {
                 System.out.println("Stack Empty!!!");
-                continue;
+                break;
             }
             poped_node = unreached_nodes.pop();
+            // System.out.println(poped_node.depth);
+            // System.out.println(poped_node.node_state.getAvatarPosition());
+            if (poped_node.node_state.getAvatarPosition().equals(keypos))
+            {
+                key_flag = true;
+            }
+
+            // * Judge whether max_depth is exceeded
+
+            if (poped_node.depth > MAX_DEPTH)
+            {   
+                depth_break = true;
+                double least_value = 10000;
+                Node best_node = null;
+                // * 利用启发函数挑选出一步最优动作
+                while (! unreached_nodes.empty())
+                {
+                    Node curr_node = unreached_nodes.pop();
+                    double curr_value = heur_function(curr_node.node_state, key_flag);
+                    // System.out.println(curr_value);
+                    if (curr_value < least_value)
+                    {
+                        least_value = curr_value;
+                        best_node = curr_node.clone();
+                    }
+                }
+                // * 这里拿到了最好的状态,已经可以break, 出去回溯了
+                poped_node=best_node.clone();
+                break;
+            }
+
             action = poped_node.node_action;//!需要定义一个类,包含动作,状态,父节点等.直接pop一个对象即可
             stCopy = poped_node.node_state;
             save_state(stCopy);
@@ -129,6 +193,7 @@ public class Agent extends AbstractPlayer {
             {
                 if (stCopy.getGameWinner()==Types.WINNER.PLAYER_WINS)
                 {
+                    win_break = true;
                     break;
                 }
                 should_push = false;
@@ -154,6 +219,7 @@ public class Agent extends AbstractPlayer {
             }
             
         }
+        // * depth_break的区别就是poped_node不一样,还有不能改choosed_action
         ArrayList<Types.ACTIONS> all_actions = new ArrayList<Types.ACTIONS>();
         all_actions.add(Types.ACTIONS.ACTION_DOWN);
         all_actions.add(Types.ACTIONS.ACTION_LEFT);
@@ -187,10 +253,16 @@ public class Agent extends AbstractPlayer {
             }
             current_node = current_node.father_node.clone();
         }
-
+        if (depth_break)
+        {
+            Types.ACTIONS action_to_choose = choosed_actions.pop();
+            choosed_actions = new Stack<Types.ACTIONS>();
+            return action_to_choose;
+        }
         
         return choosed_actions.pop();
-    }
+        // return heur_action;
+    }   
 
     /**
      * Prints the number of different types of sprites available in the "positions" array.

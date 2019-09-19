@@ -4,8 +4,6 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Stack;
 
-import com.sun.xml.internal.bind.v2.model.core.NonElement;
-import com.sun.xml.internal.ws.policy.sourcemodel.ModelNode.Type;
 
 import java.util.Random;
 
@@ -14,7 +12,6 @@ import core.game.StateObservation;
 import core.player.AbstractPlayer;
 import ontology.Types;
 import tools.ElapsedCpuTimer;
-import tools.Vector2d;
 
 /**
  * Created with IntelliJ IDEA. User: ssamot Date: 14/11/13 Time: 21:45 This is a
@@ -82,6 +79,8 @@ public class Agent extends AbstractPlayer {
 
     public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
         
+        //TODO:修改为每一步进行一次深度搜索，但这时不需要一定搜索到通关 ，
+        //TODO:而是搜索到一定的深度，再设计一个启发式函数判断局面好坏
         if (!choosed_actions.empty())
         {
             return choosed_actions.pop();
@@ -154,6 +153,7 @@ public class Agent extends AbstractPlayer {
             }
             
         }
+        // 深搜成功.现根据父节点推断每步动作
         ArrayList<Types.ACTIONS> all_actions = new ArrayList<Types.ACTIONS>();
         all_actions.add(Types.ACTIONS.ACTION_DOWN);
         all_actions.add(Types.ACTIONS.ACTION_LEFT);
