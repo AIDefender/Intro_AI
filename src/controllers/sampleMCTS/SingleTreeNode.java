@@ -46,6 +46,7 @@ public class SingleTreeNode
         int numIters = 0;
 
         int remainingLimit = 5;
+        // *利用了时间
         while(remaining > 2*avgTimeTaken && remaining > remainingLimit){
             ElapsedCpuTimer elapsedTimerIteration = new ElapsedCpuTimer();
             SingleTreeNode selected = treePolicy();

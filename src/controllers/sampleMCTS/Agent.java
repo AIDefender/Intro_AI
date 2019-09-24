@@ -62,6 +62,7 @@ public class Agent extends AbstractPlayer {
         ArrayList<Observation> grid[][] = stateObs.getObservationGrid();
 
         //Set the state observation object as the new root of the tree.
+        // ! 这才叫结构化程序设计......
         mctsPlayer.init(stateObs);
 
         //Determine the action using MCTS...
