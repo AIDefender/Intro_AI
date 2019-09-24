@@ -39,7 +39,7 @@ public class Agent extends AbstractPlayer {
      */
     protected int KEY_COVERED_PUNISH = 1000000000;
     protected int block_size;
-    protected int MAX_DEPTH = 14;
+    protected int MAX_DEPTH = 13;
 
 
 
@@ -62,10 +62,12 @@ public class Agent extends AbstractPlayer {
     protected Queue<Node> unreached_nodes;
     protected ArrayList<StateObservation> reached_states = new ArrayList<StateObservation>();
     protected Stack<Types.ACTIONS> choosed_actions = new Stack<Types.ACTIONS>();
+    ArrayList<Observation>[] fixedPositions;
+    ArrayList<Observation> hole_positions;
     protected Vector2d goalpos;
     protected Vector2d keypos;
     protected ArrayList<Vector2d> boxpos;
-    private int[] bait_timestep = {1,1,12,5,5};
+    private int[] bait_timestep = {1,1,5,5,5};
     private int index_of_bait;
     /**
      * Public constructor with state observation and time due.
@@ -77,7 +79,8 @@ public class Agent extends AbstractPlayer {
         randomGenerator = new Random();
         grid = so.getObservationGrid();
         block_size = so.getBlockSize();
-        ArrayList<Observation>[] fixedPositions = so.getImmovablePositions();
+        fixedPositions = so.getImmovablePositions();
+        hole_positions = fixedPositions[1];//洞的位置;一行一行排列,从左到右
         ArrayList<Observation>[] movingPositions = so.getMovablePositions();
         goalpos = fixedPositions[1].get(0).position; //目标的坐标
         // System.out.println(goalpos);
@@ -104,7 +107,7 @@ public class Agent extends AbstractPlayer {
         keypos = movingPositions[0].get(0).position;//钥匙的坐标
         System.out.println("LimitdepthInitialized!!");
     }
-
+    
     /**
      * Picks an action. This function is called every game step to request an action
      * from the player.
@@ -113,8 +116,8 @@ public class Agent extends AbstractPlayer {
      * @param elapsedTimer Timer when the action returned is due.
      * @return An action for the current state
      */
-
-
+    
+    
     private void save_state(StateObservation para_stateObs)
     {
         Boolean should_add = true;
@@ -134,6 +137,8 @@ public class Agent extends AbstractPlayer {
     private double heur_function(StateObservation stateObs, Boolean key_flag)
     {
         // ! 深刻理解启发函数设计的原则!
+        fixedPositions = stateObs.getImmovablePositions();
+        hole_positions = fixedPositions[1];//洞的位置;一行一行排列,从左到右
         Vector2d state_vec = stateObs.getAvatarPosition();
         double goal_dist = state_vec.dist(goalpos)/50;
         if (key_flag)
@@ -226,6 +231,7 @@ public class Agent extends AbstractPlayer {
                     node.father_node = poped_node.clone();
                     node.node_state = stCopy.copy();//这个copy异常关键!
                     node.node_action = possible_action;
+                    node.priority = heur_function(node.node_state, key_flag);
                     node.depth = node.father_node.depth+1;
                     unreached_nodes.add(node);
                 }
@@ -353,29 +359,16 @@ public class Agent extends AbstractPlayer {
         should_use = false;
         if (index_of_bait == 1)
         {
-            if (rule_flag == true && stateObs.getAvatarPosition().equals(new Vector2d(300,100)) && !key_flag)
-            {
-                should_use = true;
-                choosed_actions = new Stack<Types.ACTIONS>();
-                choosed_actions.push(Types.ACTIONS.ACTION_DOWN);
-                choosed_actions.push(Types.ACTIONS.ACTION_DOWN);
-                choosed_actions.push(Types.ACTIONS.ACTION_DOWN);
-                choosed_actions.push(Types.ACTIONS.ACTION_DOWN);
-                return Types.ACTIONS.ACTION_DOWN;
-            }
-            if (stateObs.getAvatarPosition().equals(new Vector2d(50,150)) && rule_flag==false)
+            if (stateObs.getAvatarPosition().equals(new Vector2d(250,250)))
             {
                 rule_flag = true;
                 should_use = true;
                 choosed_actions = new Stack<Types.ACTIONS>();
+                choosed_actions.push(Types.ACTIONS.ACTION_DOWN);
+                choosed_actions.push(Types.ACTIONS.ACTION_DOWN);
+                choosed_actions.push(Types.ACTIONS.ACTION_DOWN);
                 choosed_actions.push(Types.ACTIONS.ACTION_RIGHT);
-                choosed_actions.push(Types.ACTIONS.ACTION_RIGHT);
-                return Types.ACTIONS.ACTION_DOWN;
-            }
-            if (stateObs.getAvatarPosition().equals(new Vector2d(150,200)) && rule_flag==false)
-            {
-                rule_flag = false;
-                should_use = true;
+                choosed_actions.push(Types.ACTIONS.ACTION_UP);
                 return Types.ACTIONS.ACTION_UP;
             }
         }
