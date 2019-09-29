@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - Othello",
+            "request": "launch",
+            "mainClass": "othello.Othello",
+            "projectName": "PA_782b2736"
+        }
+    ]
+}
