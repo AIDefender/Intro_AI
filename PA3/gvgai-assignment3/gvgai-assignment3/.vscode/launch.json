@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - Train",
+            "request": "launch",
+            "mainClass": "Train",
+            "projectName": "gvgai-assignment3_abb4d6dd"
+        }
+    ]
+}

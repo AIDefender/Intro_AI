@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "CodeLens (Launch) - Train",
+            "request": "launch",
+            "mainClass": "Train",
+            "projectName": "PA_782b2736"
+        },
+        {
+            "type": "java",
             "name": "CodeLens (Launch) - Othello",
             "request": "launch",
             "mainClass": "othello.Othello",
