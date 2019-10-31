@@ -67,8 +67,8 @@ public class MiniMaxDecider implements Decider {
 				// Algorithm!
 				State newState = action.applyTo(state);
 				float newValue = this.miniMaxRecursor(newState, 1, !this.maximize, false, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
-				// float newValue_pruned = this.miniMaxRecursor(newState, 1, !this.maximize, true, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
-				// assert (newValue == newValue_pruned);
+				float newValue_pruned = this.miniMaxRecursor(newState, 1, !this.maximize, true, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY);
+				assert (newValue == newValue_pruned);
 				// Better candidates?
 				// ! Got it! 他没加alpha-beta剪枝!
 				if (flag * newValue > flag * value) {
