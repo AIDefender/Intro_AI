@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "CodeLens (Launch) - Test",
+            "request": "launch",
+            "mainClass": "Test",
+            "projectName": "gvgai-assignment3_abb4d6dd"
+        },
+        {
+            "type": "java",
             "name": "CodeLens (Launch) - Train",
             "request": "launch",
             "mainClass": "Train",
