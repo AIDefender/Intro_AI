@@ -114,10 +114,12 @@ public class Recorder {
     public static Instances datasetHeader(){
         FastVector attInfo = new FastVector();
         // 448 locations
-        for(int y=0; y<14; y++){
-            for(int x=0; x<32; x++){
-                Attribute att = new Attribute("object_at_position_x=" + x + "_y=" + y);
-                attInfo.addElement(att);
+        for (int k = 0; k<4; k++){
+            for(int y=0; y<14; y++){
+                for(int x=0; x<32; x++){
+                    Attribute att = new Attribute("timestep" + k + "object_at_position_x=" + x + "_y=" + y);
+                    attInfo.addElement(att);
+                }
             }
         }
         Attribute att = new Attribute("GameTick" ); attInfo.addElement(att);
