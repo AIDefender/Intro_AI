@@ -16,7 +16,7 @@ public class Test
         int seed = new Random().nextInt(); // seed for random
         
         CompetitionParameters.ACTION_TIME = 1000; // set to the time that allows you to do the depth first search
-        ArcadeMachine.runOneGame("examples/gridphysics/aliens.txt", "examples/gridphysics/aliens_lvl3.txt", true, modelController, null, seed, false);
+        ArcadeMachine.runOneGame("examples/gridphysics/aliens.txt", "examples/gridphysics/aliens_lvl4.txt", true, modelController, null, seed, false);
         
     }
 }

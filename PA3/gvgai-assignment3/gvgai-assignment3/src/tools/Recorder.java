@@ -25,11 +25,13 @@ import weka.core.Instances;
 public class Recorder {
     public FileWriter filewriter;
     public static Instances s_datasetHeader = datasetHeader();
+    public static int has_init;
     
     public Recorder(String filename) throws Exception{
         
         filewriter = new FileWriter(filename+".arff");
         filewriter.write(s_datasetHeader.toString());
+        has_init = 0;
         /*
                 // ARFF File header
         filewriter.write("@RELATION AliensData\n");
@@ -52,10 +54,20 @@ public class Recorder {
     
     public static double[] featureExtract(StateObservation obs){
         
-        double[] feature = new double[453];  // 448 + 4 + 1(class)
+        //TODO:加入前几帧的特征并堆叠起来
+        // * 加入saved_flag指示是否有copy,若无则全是本帧特征
+
+        int NUM_CLASS_FEAT = 1;
+        int NUM_ROW = 32;
+        int NUM_COL = 14;
+        int NUM_TIMESTEPS = 4;
+        int NUM_EXTRA_FEAT = 4;
+
+
+        double[] feature = new double[NUM_ROW*NUM_COL*NUM_TIMESTEPS+NUM_EXTRA_FEAT+NUM_CLASS_FEAT];  // 448*4 + 4 + 1(class)
         
         // 448 locations
-        int[][] map = new int[32][14];
+        int[][] map = new int[NUM_ROW][NUM_COL];
         // Extract features
         LinkedList<Observation> allobj = new LinkedList<>();
         if( obs.getImmovablePositions()!=null )
@@ -71,15 +83,30 @@ public class Recorder {
             int y= (int)(p.y/25);
             map[x][y] = o.itype;
         }
-        for(int y=0; y<14; y++)
-            for(int x=0; x<32; x++)
-                feature[y*32+x] = map[x][y];
+        if (has_init==0)
+        {
+            has_init = 1;
+            for(int k=0; k<NUM_TIMESTEPS; k++)
+                for(int y=0; y<NUM_COL; y++)
+                    for(int x=0; x<NUM_ROW; x++)
+                        feature[k*NUM_COL*NUM_ROW+y*NUM_ROW+x] = map[x][y];
+        }
+        else 
+        {
+            for(int k=0; k<NUM_TIMESTEPS-1; k++)
+                for(int y=0; y<NUM_COL; y++)
+                    for(int x=0; x<NUM_ROW; x++)
+                        feature[(k+1)*NUM_COL*NUM_ROW+y*NUM_ROW+x] = feature[k*NUM_COL*NUM_ROW+y*NUM_ROW+x];
+            for(int y=0; y<NUM_COL; y++)
+                for(int x=0; x<NUM_ROW; x++)
+                    feature[(NUM_TIMESTEPS-1)*NUM_COL*NUM_ROW+y*NUM_ROW+x] = map[x][y];
+        }
         
         // 4 states
-        feature[448] = obs.getGameTick();
-        feature[448] = obs.getAvatarSpeed();
-        feature[448] = obs.getAvatarHealthPoints();
-        feature[448] = obs.getAvatarType();
+        feature[NUM_ROW*NUM_COL*NUM_TIMESTEPS] = obs.getGameTick();
+        feature[NUM_ROW*NUM_COL*NUM_TIMESTEPS+1] = obs.getAvatarSpeed();
+        feature[NUM_ROW*NUM_COL*NUM_TIMESTEPS+2] = obs.getAvatarHealthPoints();
+        feature[NUM_ROW*NUM_COL*NUM_TIMESTEPS+3] = obs.getAvatarType();
         
         return feature;
     }
