@@ -62,7 +62,7 @@ public class Recorder {
         int NUM_COL = 14;
         int NUM_TIMESTEPS = 4;
         int NUM_EXTRA_FEAT = 4;
-
+        
 
         double[] feature = new double[NUM_ROW*NUM_COL*NUM_TIMESTEPS+NUM_EXTRA_FEAT+NUM_CLASS_FEAT];  // 448*4 + 4 + 1(class)
         
