@@ -29,7 +29,7 @@ public class Assignment4
         String level = "examples/gridphysics/freeway_lvl";
 
         //Other settings
-        boolean visuals = false;
+        boolean visuals = true;
         int seed = new Random().nextInt();
 
         //Game and level to play

@@ -21,7 +21,7 @@ public class Agent extends AbstractPlayer {
 
     protected Classifier m_model;
     protected Random m_rnd;
-    private static int SIMULATION_DEPTH = 20;
+    private static int SIMULATION_DEPTH = 100;
     private final HashMap<Integer, Types.ACTIONS> action_mapping;
     protected QPolicy m_policy;
     protected int N_ACTIONS;
@@ -57,7 +57,7 @@ public class Agent extends AbstractPlayer {
     public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
 
         //m_timer = elapsedTimer;
-        learnPolicy(stateObs, SIMULATION_DEPTH, new WinScoreHeuristic(stateObs));
+        learnPolicy(stateObs, SIMULATION_DEPTH, new SimpleStateHeuristic(stateObs));
 
         Types.ACTIONS bestAction = null;
         try {
@@ -95,6 +95,7 @@ public class Agent extends AbstractPlayer {
                 double score_after = heuristic.evaluateState(stateObs);
 
                 double delta_score = factor * (score_after - score_before);
+                // System.out.println(delta_score);
                 factor = factor * m_gamma;
                 // collect data
                 sequence[depth] = RLDataExtractor.makeInstance(features, action_num, delta_score);
@@ -123,6 +124,7 @@ public class Agent extends AbstractPlayer {
         for (depth = depth - 1; depth >= 0; depth--) {
             accQ += sequence[depth].classValue();
             sequence[depth].setClassValue(accQ);// 重新标定类别.
+            // System.out.println(accQ);
             data.add(sequence[depth]);
         }
         nr++;

@@ -30,8 +30,10 @@ public class RLDataExtractor {
     private static int num_row = 28;
     private static int num_col = 31;
     private static int num_extra = 4;
-    private static int num_timestep = 1;
+    private static int num_timestep = 4;
     private static int total_feat=num_row * num_col * num_timestep + num_extra;
+    private static int size_square = 30;
+    public static int has_init=0;
     
     public RLDataExtractor(String filename) throws Exception{
         
@@ -59,6 +61,7 @@ public class RLDataExtractor {
     
     public static Instance makeInstance(double[] features, int action, double reward){
         features[total_feat] = action;
+        // System.out.println(reward);
         features[total_feat+1] = reward;
         Instance ins = new Instance(1, features);
         ins.setDataset(s_datasetHeader);
@@ -83,19 +86,33 @@ public class RLDataExtractor {
         for(Observation o : allobj){
             Vector2d p = o.position;
             // System.out.println(p.x);
-            int x = (int)(p.x/30); //squre size is 20 for pacman
-            int y= (int)(p.y/30);
+            int x = (int)(p.x/size_square); //squre size is 20 for pacman
+            int y= (int)(p.y/size_square);
             map[x][y] = o.itype;
         }
-        for(int y=0; y<num_col; y++)
-            for(int x=0; x<num_row; x++)
-                feature[y*num_row+x] = map[x][y];
-        
-        // 4 states
-        feature[868] = obs.getGameTick();
-        feature[869] = obs.getAvatarSpeed();
-        feature[870] = obs.getAvatarHealthPoints();
-        feature[871] = obs.getAvatarType();
+        if (has_init==0)
+        {
+            has_init = 1;
+            for(int k=0; k<num_timestep; k++)
+                for(int y=0; y<num_col; y++)
+                    for(int x=0; x<num_row; x++)
+                        feature[k*num_col*num_row+y*num_row+x] = map[x][y];
+        }
+        else 
+        {
+            for(int k=0; k<num_timestep-1; k++)
+                for(int y=0; y<num_col; y++)
+                    for(int x=0; x<num_row; x++)
+                        feature[(k+1)*num_col*num_row+y*num_row+x] = feature[k*num_col*num_row+y*num_row+x];
+            for(int y=0; y<num_col; y++)
+                for(int x=0; x<num_row; x++)
+                    feature[(num_timestep-1)*num_col*num_row+y*num_row+x] = map[x][y];
+        }
+               // 4 states
+        feature[num_row*num_col*num_timestep] = obs.getGameTick();
+        feature[num_row*num_col*num_timestep+1] = obs.getAvatarSpeed();
+        feature[num_row*num_col*num_timestep+2] = obs.getAvatarHealthPoints();
+        feature[num_row*num_col*num_timestep+3] = obs.getAvatarType();
         
         return feature;
     }
@@ -107,10 +124,12 @@ public class RLDataExtractor {
         
         FastVector attInfo = new FastVector();
         // 448 locations
-        for(int y=0; y<28; y++){
-            for(int x=0; x<31; x++){
-                Attribute att = new Attribute("object_at_position_x=" + x + "_y=" + y);
-                attInfo.addElement(att);
+        for (int k = 0; k<num_timestep; k++){
+            for(int y=0; y<num_col; y++){
+                for(int x=0; x<num_row; x++){
+                    Attribute att = new Attribute("timestep" + k + "object_at_position_x=" + x + "_y=" + y);
+                    attInfo.addElement(att);
+                }
             }
         }
         Attribute att = new Attribute("GameTick" ); attInfo.addElement(att);
