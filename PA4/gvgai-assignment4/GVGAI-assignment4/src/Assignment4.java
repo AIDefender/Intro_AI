@@ -1,7 +1,9 @@
 import java.lang.annotation.Repeatable;
+import java.sql.Time;
 import java.util.Random;
 import core.competition.CompetitionParameters;
-
+import java.util.Date;
+import java.text.SimpleDateFormat;
 import core.ArcadeMachine;
 
 /**
@@ -16,6 +18,9 @@ public class Assignment4
 
     public static void main(String[] args)
     {
+        Date d = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println(sdf.format(d));
         //Reinforcement learning controllers:
     	String rlController = "controllers.learningmodel.Agent";
         
@@ -24,7 +29,7 @@ public class Assignment4
         String level = "examples/gridphysics/freeway_lvl";
 
         //Other settings
-        boolean visuals = true;
+        boolean visuals = false;
         int seed = new Random().nextInt();
 
         //Game and level to play
@@ -33,7 +38,7 @@ public class Assignment4
         CompetitionParameters.ACTION_TIME = 1000000;
         //ArcadeMachine.runOneGame(game, level, visuals, rlController, null, seed, false);
         //String level2 = gamesPath + games[gameIdx] + "_lvl" + 1 +".txt";
-        for(int i=0; i<10; i++){
+        for(int i=0; i<50; i++){
             String levelfile = level + "0.txt";
             ArcadeMachine.runOneGame(game, levelfile, visuals, rlController, null, seed, false);
         }

@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - HumanPlay",
+            "request": "launch",
+            "mainClass": "HumanPlay",
+            "projectName": "GVGAI-assignment4_fe084400"
+        },
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - Assignment4",
+            "request": "launch",
+            "mainClass": "Assignment4"
+        }
+    ]
+}

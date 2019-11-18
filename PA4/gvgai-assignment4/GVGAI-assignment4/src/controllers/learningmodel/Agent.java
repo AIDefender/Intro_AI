@@ -28,6 +28,7 @@ public class Agent extends AbstractPlayer {
     protected static Instances m_dataset;
     protected int m_maxPoolSize = 1000;
     protected double m_gamma = 0.99;
+    protected int nr = 0;
 
     public Agent(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
         m_rnd = new Random();
@@ -108,7 +109,7 @@ public class Agent extends AbstractPlayer {
             }
         }
 
-        // get the predicted Q from the last state
+        // get the predicted Q from the last state(最后一个state,而不是上一个state)
         double accQ = 0;
         if (!stateObs.isGameOver()) {
             try {
@@ -121,8 +122,14 @@ public class Agent extends AbstractPlayer {
         // calculate the acumulated Q
         for (depth = depth - 1; depth >= 0; depth--) {
             accQ += sequence[depth].classValue();
-            sequence[depth].setClassValue(accQ);
+            sequence[depth].setClassValue(accQ);// 重新标定类别.
             data.add(sequence[depth]);
+        }
+        nr++;
+        if (nr>100)
+        {
+            System.out.println(accQ);
+            nr=0;
         }
         return data;
     }
@@ -139,6 +146,8 @@ public class Agent extends AbstractPlayer {
 
             // update dataset
             m_dataset.randomize(m_rnd);
+            // System.out.println("num of instances");
+            // System.out.println(dataset.numInstances());
             for (int i = 0; i < dataset.numInstances(); i++) {
                 m_dataset.add(dataset.instance(i)); // add to the last
             }

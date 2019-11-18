@@ -376,7 +376,7 @@ public class VGDLFactory
             else
             {
                 //Ignore unknown fields in dependent Effects (TimeEffect).
-                boolean warn = true;
+                boolean warn = false;
                 boolean isInteraction = (content instanceof InteractionContent);
                 if(isInteraction)
                 {

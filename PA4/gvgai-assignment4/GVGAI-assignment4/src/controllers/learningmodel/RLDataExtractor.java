@@ -79,7 +79,12 @@ public class RLDataExtractor {
             Vector2d p = o.position;
             int x = (int)(p.x/20); //squre size is 20 for pacman
             int y= (int)(p.y/20);
-            map[x][y] = o.itype;
+            if (x<28)
+            {
+                // System.out.println(x);
+                // System.out.println(y);
+                map[x][y] = o.itype;
+            }
         }
         for(int y=0; y<31; y++)
             for(int x=0; x<28; x++)
