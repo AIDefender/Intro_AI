@@ -27,6 +27,11 @@ import weka.core.Instances;
 public class RLDataExtractor {
     public FileWriter filewriter;
     public static Instances s_datasetHeader = datasetHeader();
+    private static int num_row = 28;
+    private static int num_col = 31;
+    private static int num_extra = 4;
+    private static int num_timestep = 1;
+    private static int total_feat=num_row * num_col * num_timestep + num_extra;
     
     public RLDataExtractor(String filename) throws Exception{
         
@@ -49,12 +54,12 @@ public class RLDataExtractor {
         filewriter.write("@ATTRIBUTE Class {0,1,2}\n");
         // The data will recorded in the following.
         filewriter.write("@Data\n");*/
-        
+        // total_feat = num_row * num_col * num_timestep + num_extra;
     }
     
     public static Instance makeInstance(double[] features, int action, double reward){
-        features[872] = action;
-        features[873] = reward;
+        features[total_feat] = action;
+        features[total_feat+1] = reward;
         Instance ins = new Instance(1, features);
         ins.setDataset(s_datasetHeader);
         return ins;
@@ -62,10 +67,10 @@ public class RLDataExtractor {
     
     public static double[] featureExtract(StateObservation obs){
         
-        double[] feature = new double[874];  // 868 + 4 + 1(action) + 1(Q)
+        double[] feature = new double[total_feat+2];  // 868 + 4 + 1(action) + 1(Q)
         
         // 448 locations
-        int[][] map = new int[28][31];
+        int[][] map = new int[num_row][num_col];
         // Extract features
         LinkedList<Observation> allobj = new LinkedList<>();
         if( obs.getImmovablePositions()!=null )
@@ -77,18 +82,14 @@ public class RLDataExtractor {
         
         for(Observation o : allobj){
             Vector2d p = o.position;
-            int x = (int)(p.x/20); //squre size is 20 for pacman
-            int y= (int)(p.y/20);
-            if (x<28)
-            {
-                // System.out.println(x);
-                // System.out.println(y);
-                map[x][y] = o.itype;
-            }
+            // System.out.println(p.x);
+            int x = (int)(p.x/30); //squre size is 20 for pacman
+            int y= (int)(p.y/30);
+            map[x][y] = o.itype;
         }
-        for(int y=0; y<31; y++)
-            for(int x=0; x<28; x++)
-                feature[y*28+x] = map[x][y];
+        for(int y=0; y<num_col; y++)
+            for(int x=0; x<num_row; x++)
+                feature[y*num_row+x] = map[x][y];
         
         // 4 states
         feature[868] = obs.getGameTick();
