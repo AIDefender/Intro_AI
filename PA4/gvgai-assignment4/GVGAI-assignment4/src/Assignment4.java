@@ -41,6 +41,7 @@ public class Assignment4
         for(int i=0; i<50; i++){
             String levelfile = level + "0.txt";
             ArcadeMachine.runOneGame(game, levelfile, visuals, rlController, null, seed, false);
+            System.out.println("000");
         }
         
     }
