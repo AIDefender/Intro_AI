@@ -69,7 +69,8 @@ public class RLDataExtractor {
     }
     
     public static double[] featureExtract(StateObservation obs){
-        
+        // System.out.println(total_feat);
+
         double[] feature = new double[total_feat+2];  // 868 + 4 + 1(action) + 1(Q)
         
         // 448 locations
@@ -124,9 +125,11 @@ public class RLDataExtractor {
         
         FastVector attInfo = new FastVector();
         // 448 locations
-        for (int k = 0; k<num_timestep; k++){
-            for(int y=0; y<num_col; y++){
-                for(int x=0; x<num_row; x++){
+        // System.out.println(num_col);
+        // System.out.println(num_timestep);
+        for (int k = 0; k<4; k++){
+            for(int y=0; y<31; y++){
+                for(int x=0; x<28; x++){
                     Attribute att = new Attribute("timestep" + k + "object_at_position_x=" + x + "_y=" + y);
                     attInfo.addElement(att);
                 }

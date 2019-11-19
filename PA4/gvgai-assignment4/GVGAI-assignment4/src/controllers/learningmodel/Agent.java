@@ -57,7 +57,7 @@ public class Agent extends AbstractPlayer {
     public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
 
         //m_timer = elapsedTimer;
-        learnPolicy(stateObs, SIMULATION_DEPTH, new SimpleStateHeuristic(stateObs));
+        learnPolicy(stateObs, SIMULATION_DEPTH, new WinScoreHeuristic(stateObs));
 
         Types.ACTIONS bestAction = null;
         try {
@@ -99,6 +99,7 @@ public class Agent extends AbstractPlayer {
                 factor = factor * m_gamma;
                 // collect data
                 sequence[depth] = RLDataExtractor.makeInstance(features, action_num, delta_score);
+                // System.out.println(sequence[depth].classValue());
 
             } catch (Exception exc) {
                 exc.printStackTrace();
