@@ -26,7 +26,6 @@ import weka.core.Instances;
  */
 public class RLDataExtractor {
     public FileWriter filewriter;
-    public static Instances s_datasetHeader = datasetHeader();
     private static int num_row = 28;
     private static int num_col = 31;
     private static int num_extra = 4;
@@ -35,6 +34,7 @@ public class RLDataExtractor {
     private static int size_square = 30;
     public static int has_init=0;
     
+    public static Instances s_datasetHeader = datasetHeader();
     public RLDataExtractor(String filename) throws Exception{
         
         filewriter = new FileWriter(filename+".arff");

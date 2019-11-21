@@ -124,7 +124,7 @@ public class Agent extends AbstractPlayer {
         // calculate the acumulated Q
         for (depth = depth - 1; depth >= 0; depth--) {
             accQ += sequence[depth].classValue();
-            sequence[depth].setClassValue(accQ);// 重新标定类别.
+            sequence[depth].setClassValue(accQ);
             // System.out.println(accQ);
             data.add(sequence[depth]);
         }
