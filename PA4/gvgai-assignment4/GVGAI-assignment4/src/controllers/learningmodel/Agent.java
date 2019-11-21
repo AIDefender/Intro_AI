@@ -21,7 +21,7 @@ public class Agent extends AbstractPlayer {
 
     protected Classifier m_model;
     protected Random m_rnd;
-    private static int SIMULATION_DEPTH = 20;
+    private static int SIMULATION_DEPTH = 50;
     private final HashMap<Integer, Types.ACTIONS> action_mapping;
     protected QPolicy m_policy;
     protected int N_ACTIONS;

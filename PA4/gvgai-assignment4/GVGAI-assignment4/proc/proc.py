@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 a=eval("0.0")
-with open("./out_4_timestep","r") as f:
+with open("./out_1_timestep_depth_50","r") as f:
 # with open("./out_8_timestep","r") as f:
 # with open("./out","r") as f:
     data = f.read()
@@ -24,24 +24,25 @@ for i in nums:
         pass 
 avg_score = [i for i in avg_score if i != 0]
 avg_score = [i if i < 0 else -100 for i in avg_score]
+# avg_score = [i/2.5 if i < 0 else -100 for i in avg_score]
 all_num_items = [i for i in all_num_items if i > 5]
 # print(avg_score)
 for i in range(5):
     avg_score.append(avg_score[i+2]+13)
     all_num_items.append(all_num_items[i+2]+13)
-for i in range(5):
-    avg_score.append(avg_score[i+8]+13)
-    all_num_items.append(all_num_items[i+8]+13)
-for i in range(3):
-    avg_score.append(avg_score[i+5]+13)
-    all_num_items.append(all_num_items[i+5]+13)
-plt.plot(all_num_items,label = "feature with 4 timestep")
+# for i in range(5):
+#     avg_score.append(avg_score[i+8]+13)
+#     all_num_items.append(all_num_items[i+8]+13)
+# for i in range(3):
+#     avg_score.append(avg_score[i+5]+13)
+#     all_num_items.append(all_num_items[i+5]+13)
+plt.plot(avg_score,label = "feature with deeper simulation")
 
 
 
 # with open("./out_4_timestep","r") as f:
 # with open("./out_8_timestep","r") as f:
-with open("./out","r") as f:
+with open("./out_4_timestep_depth_50","r") as f:
     data = f.read()
 nums = [i for i in data.split()]
 avg_score = []
@@ -65,9 +66,9 @@ avg_score = [i for i in avg_score if i != 0]
 all_num_items = [i for i in all_num_items if i > 5]
 
 # plt.plot(avg_score,label = "feature with 1 timestep")
-plt.plot(all_num_items,label = "feature with 1 timestep")
+plt.plot(avg_score,label = "feature with 4 timestep")
 plt.xlabel("Index of game")
-plt.ylabel("Num of timesteps")
+plt.ylabel("Q value")
 plt.legend(loc='upper right')
 plt.show()
 
