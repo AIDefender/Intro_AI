@@ -5,7 +5,7 @@ from agent.agent import RandomAgent
 
 if __name__ == '__main__':
     begin = time.time()
-    env = Go()
+    env = Go(flatten_board_state=False)
     agents = [RandomAgent(idx) for idx in range(2)]
 
     for ep in range(10):
