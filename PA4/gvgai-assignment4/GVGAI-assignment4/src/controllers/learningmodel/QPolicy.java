@@ -18,7 +18,7 @@ import weka.core.Instances;
  * @author yuy
  */
 public class QPolicy {
-    protected double m_epsilon=0.3;
+    protected double m_epsilon=0.5;
     protected Classifier m_c;
     protected Instances m_dataset;
     protected Random m_rnd;

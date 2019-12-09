@@ -57,7 +57,7 @@ public class Agent extends AbstractPlayer {
     public Types.ACTIONS act(StateObservation stateObs, ElapsedCpuTimer elapsedTimer) {
 
         //m_timer = elapsedTimer;
-        learnPolicy(stateObs, SIMULATION_DEPTH, new WinScoreHeuristic(stateObs));
+        learnPolicy(stateObs, SIMULATION_DEPTH, new SimpleStateHeuristic(stateObs));
 
         Types.ACTIONS bestAction = null;
         try {
