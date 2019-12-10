@@ -6,6 +6,7 @@ import tensorflow as tf
 from algorithms.policy_gradient import PolicyGradient
 from algorithms.dqn import DQN
 import agent.agent as agent
+from utils import get_max_idx
 
 FLAGS = flags.FLAGS
 
@@ -17,7 +18,7 @@ flags.DEFINE_integer("eval_every", 2000,
                      "Episode frequency at which the agents are evaluated.")
 flags.DEFINE_integer("learn_every", 128,
                      "Episode frequency at which the agents learn.")
-flags.DEFINE_integer("save_every", 2000,
+flags.DEFINE_integer("save_every", 5000,
                      "Episode frequency at which the agents save the policies.")
 flags.DEFINE_list("hidden_layers_sizes", [
     128, 128
@@ -46,7 +47,7 @@ def init_hyper_paras():
         "epsilon_decay_duration": int(0.6*FLAGS.num_train_episodes),
         "epsilon_start": 0.8,
         "epsilon_end": 0.001,
-        "learning_rate": 1e-3,
+        "learning_rate": 3e-4,
         "learn_every": FLAGS.learn_every,
         "batch_size": 128,
         "max_global_gradient_norm": 10,
@@ -63,11 +64,11 @@ def init_agents(sess,info_state_size,num_actions,hidden_layers_sizes,**kwargs):
 
     return agents 
 
-def prt_logs(ep,agents):
+def prt_logs(ep,agents,ret,begin):
 
     losses = agents[0].loss
     logging.info("Episodes: {}: Losses: {}, Rewards: {}".format(ep + 1, losses, np.mean(ret)))
-    with open('logs/log_{}_{}'.format(os.environ.get('BOARD_SIZE'), begin), 'a+') as log_file:
+    with open('logs/log_{}_{}'.format(os.environ.get('BOARD_SIZE'), "dqn_vs_rand"), 'a+') as log_file:
         log_file.writelines("{}, {}\n".format(ep+1, np.mean(ret)))
 
 def save_model(ep,agents):
@@ -76,47 +77,69 @@ def save_model(ep,agents):
         os.mkdir('saved_model')
     agents[0].save(checkpoint_root='saved_model', checkpoint_name='{}'.format(ep+1))
 
+    print("Model Saved!")
+
+def restore_model(agents,path=None):
+
+    if path:
+        agents[0].restore(path)
+        idex = path.split("/")[-1]
+    else:
+        idex = get_max_idx("./saved_model")
+        path = os.path.join("./saved_model/",str(idex))
+        agents[0].restore(path)
+
+    logging.info("Agent model restored at {}".format(path))
+
+    return int(idex)
+
 
 def train(agents,env,ret,max_len,begin):
 
-    for ep in range(FLAGS.num_train_episodes):
+    global_ep = restore_model(agents)
+    # global_ep = restore_model(agents,"./used_model/38000")
 
-        if (ep + 1) % FLAGS.eval_every == 0:
+    try:
 
-            prt_logs(ep,agents)
+        for ep in range(FLAGS.num_train_episodes):
 
-        if (ep + 1) % FLAGS.save_every == 0:
+            if (ep + 1) % FLAGS.eval_every == 0:
 
-            save_model(ep,agents)
+                prt_logs(global_ep+ep,agents,ret,begin)
 
-        time_step = env.reset()  # a go.Position object
+            if (ep + 1) % FLAGS.save_every == 0:
 
-        while not time_step.last():
+                save_model(global_ep+ep,agents)
 
-            player_id = time_step.observations["current_player"]
-            agent_output = agents[player_id].step(time_step)
-            action_list = agent_output.action
-            time_step = env.step(action_list)
+            time_step = env.reset()  # a go.Position object
 
-        for agent in agents:
+            while not time_step.last():
 
-            agent.step(time_step)
+                player_id = time_step.observations["current_player"]
+                agent_output = agents[player_id].step(time_step)
+                action_list = agent_output.action
+                time_step = env.step(action_list)
 
-        if len(ret) < max_len:
+            for agent in agents:
 
-            ret.append(time_step.rewards[0])
+                agent.step(time_step)
 
-        else:
+            if len(ret) < max_len:
 
-            ret[ep % max_len] = time_step.rewards[0]
+                ret.append(time_step.rewards[0])
 
-def restore_agents(agnets):
-    
-    pass
+            else:
+
+                ret[ep % max_len] = time_step.rewards[0]
+
+    except KeyboardInterrupt:
+
+        save_model(global_ep+ep,agents)
 
 def evaluate(agents,env):
 
-    restore_agents(agents)
+    global_ep = restore_model(agents)
+    # global_ep = restore_model(agents,"./used_model/38000")
 
     ret = []
 
@@ -139,7 +162,7 @@ def evaluate(agents,env):
 
     return ret 
 
-def stat(ret,begin);
+def stat(ret,begin):
 
     print(np.mean(ret))
 
