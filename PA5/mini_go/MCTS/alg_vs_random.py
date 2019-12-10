@@ -37,8 +37,9 @@ def use_dqn():
 
 def init_env():
     begin = time.time()
-    env = Go()
+    env = Go(flatten_board_state=False)
     info_state_size = env.state_size
+    print(info_state_size)
     num_actions = env.action_size
 
     return env,info_state_size,num_actions, begin
@@ -61,7 +62,7 @@ def init_hyper_paras():
     return hidden_layers_sizes, kwargs, ret, max_len
 
 def init_agents(sess,info_state_size,num_actions,hidden_layers_sizes,**kwargs):
-    agents = [DQN(sess, 0, info_state_size,
+    agents = [DQN(sess, 0, info_state_size**0.5,
                         num_actions, hidden_layers_sizes, **kwargs), agent.RandomAgent(1)]
     sess.run(tf.global_variables_initializer())
 
@@ -99,6 +100,7 @@ def restore_model(agents,path=None):
 
 def train(agents,env,ret,max_len,begin):
 
+    global_ep = 0
     # global_ep = restore_model(agents)
     # global_ep = restore_model(agents,"./used_model/38000")
 

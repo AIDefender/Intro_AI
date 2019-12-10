@@ -34,7 +34,7 @@ def use_dqn():
 
 def init_env():
     begin = time.time()
-    env = Go()
+    env = Go(flatten_board_state=True)
     info_state_size = env.state_size
     num_actions = env.action_size
 

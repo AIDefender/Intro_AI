@@ -138,7 +138,7 @@ class DQN:
 
         # Create required TensorFlow placeholders to perform the Q-network updates.
         self._info_state_ph = tf.placeholder(
-            shape=[None, state_representation_size],
+            shape=[None, state_representation_size,state_representation_size,1],
             dtype=tf.float32,
             name="info_state_ph")
         self._action_ph = tf.placeholder(
@@ -148,7 +148,7 @@ class DQN:
         self._is_final_step_ph = tf.placeholder(
             shape=[None], dtype=tf.float32, name="is_final_step_ph")
         self._next_info_state_ph = tf.placeholder(
-            shape=[None, state_representation_size],
+            shape=[None, state_representation_size,state_representation_size,1],
             dtype=tf.float32,
             name="next_info_state_ph")
         self._legal_actions_mask_ph = tf.placeholder(
@@ -157,22 +157,18 @@ class DQN:
             name="legal_actions_mask_ph")
 
         # self._q_network = snt.nets.MLP(output_sizes=self._layer_sizes)
-        self._q_network_1 = snt.nets.ConvNet2D([4,4],3,1,1) # 5,5,4
-        self._q_network_2 = snt.nets.ConvNet2D(8,3,1,0) # 3,3,8
-        self._q_network_3 = snt.nets.ConvNet2D(16,3,1,0) # 1,1,16
-        self._q_network = [self._q_network_1,self._q_network_2,self._q_network_3]
-        self._q_values = self._q_network3(self._q_network_2(self._q_network_1((self._info_state_ph))))
-        self._target_q_network_1 = snt.nets.ConvNet2D(4,3,1,1) # 5,5,4
-        self._target_q_network_2 = snt.nets.ConvNet2D(8,3,1,0) # 3,3,8
-        self._target_q_network_3 = snt.nets.ConvNet2D(16,3,1,0) # 1,1,16
-        self._target_q_network = [self._target_q_network_1,self._target_q_network_2,self._target_q_network_3]
-        self._target_q_values = self._target_q_network3(self._target_q_network_2(self._target_q_network_1((self._info_state_ph))))
+        self._q_network_cnn = snt.nets.ConvNet2D([4,8,16],[3,3,3],[1,1,1],["SAME","VALID","VALID"]) # 5,5,4
+        self._q_network_mlp = snt.nets.MLP(output_sizes=[num_actions])
+        self._q_values = self._q_network_mlp(tf.layers.flatten(self._q_network_cnn((self._info_state_ph))))
+        self._target_q_network_cnn = snt.nets.ConvNet2D([4,8,16],[3,3,3],[1,1,1],["SAME","VALID","VALID"]) # 5,5,4
+        self._target_q_network_mlp = snt.nets.MLP(output_sizes=[num_actions])
+        self._target_q_values = self._target_q_network_mlp(tf.layers.flatten(self._target_q_network_cnn((self._info_state_ph))))
 
         # Stop gradient to prevent updates to the target network while learning
         self._target_q_values = tf.stop_gradient(self._target_q_values)
 
         self._update_target_network = self._create_target_network_update_op(
-            self._q_network, self._target_q_network)
+            self._q_network_cnn,self._q_network_mlp, self._target_q_network_cnn,self._target_q_network_mlp)
 
         # Create the loss operations.
         # Sum a large negative constant to illegal action logits before taking the
@@ -219,7 +215,7 @@ class DQN:
         self._learn_step = minimize_with_clipping(optimizer, self._loss)
 
         # self._ckp = tf.train.Checkpoint(module=self._q_network)
-        self._saver = tf.train.Saver(var_list=self._q_network_1.variables+self._q_network_2.variables+self._q_network_3.variables)
+        self._saver = tf.train.Saver(var_list=self._q_network_mlp.variables+self._q_network_cnn.variables)
 
     def step(self, time_step, is_evaluation=False, add_transition_record=True):
         """Returns the action to be taken and updates the Q-network if needed.
@@ -293,7 +289,7 @@ class DQN:
             legal_actions_mask=legal_actions_mask)
         self._replay_buffer.add(transition)
 
-    def _create_target_network_update_op(self, q_networks, target_q_networks):
+    def _create_target_network_update_op(self, q_network_cnn, q_network_mlp, target_q_network_cnn, target_q_network_mlp):
         """Create TF ops copying the params of the Q-network to the target network.
 
         Args:
@@ -303,13 +299,17 @@ class DQN:
         Returns:
           A `tf.Operation` that updates the variables of the target.
         """
-        ops = []
-        for q_network, target_q_network in zip(q_networks,target_q_networks):
-            variables = q_network.get_variables()
-            target_variables = target_q_network.get_variables()
-            ops.append(tf.assign(target_v, v) for (target_v, v) in zip(target_variables, variables))
-
-        return tf.group(ops)
+        variables_cnn = q_network_cnn.get_variables()
+        target_variables_cnn = target_q_network_cnn.get_variables()
+        variables_mlp = q_network_mlp.get_variables()
+        target_variables_mlp = target_q_network_mlp.get_variables()
+        return tf.group([
+            tf.assign(target_v, v)
+            for (target_v, v) in zip(target_variables_cnn, variables_cnn)
+        ] + [
+            tf.assign(target_v, v)
+            for (target_v, v) in zip(target_variables_mlp, variables_mlp)
+        ])
 
     def _epsilon_greedy(self, info_state, legal_actions, epsilon):
         """Returns a valid epsilon-greedy action and valid action probs.
@@ -329,7 +329,7 @@ class DQN:
             action = np.random.choice(legal_actions)
             probs[legal_actions] = 1.0 / len(legal_actions)
         else:
-            info_state = np.reshape(info_state, [1, -1])
+            info_state = np.reshape(info_state, [1,5,5,1])
             q_values = self._session.run(
                 self._q_values, feed_dict={self._info_state_ph: info_state})[0]
             legal_q_values = q_values[legal_actions]
@@ -371,11 +371,11 @@ class DQN:
         loss, _ = self._session.run(
             [self._loss, self._learn_step],
             feed_dict={
-                self._info_state_ph: info_states,
+                self._info_state_ph: np.reshape(info_states,(-1,5,5,1)),
                 self._action_ph: actions,
                 self._reward_ph: rewards,
                 self._is_final_step_ph: are_final_steps,
-                self._next_info_state_ph: next_info_states,
+                self._next_info_state_ph: np.reshape(next_info_states,(-1,5,5,1)),
                 self._legal_actions_mask_ph: legal_actions_mask,
             })
         return loss

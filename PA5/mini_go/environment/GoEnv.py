@@ -107,6 +107,7 @@ class Go(object):
                 _state = np.reshape(self.info_state, (self.__state_size,))
             else:
                 _state = self.info_state
+                # print(_state)
             observations["info_state"].append(_state)
             observations['legal_actions'].append(np.where(self.__state.all_legal_moves() == 1)[0])
             # else:
