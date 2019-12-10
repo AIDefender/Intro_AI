@@ -6,7 +6,7 @@ import time, os
 import numpy as np
 import tensorflow as tf
 from algorithms.policy_gradient import PolicyGradient
-from algorithms.dqn import DQN
+from algorithms.dqn_cnn import DQN
 import agent.agent as agent
 from utils import get_max_idx
 
@@ -99,7 +99,7 @@ def restore_model(agents,path=None):
 
 def train(agents,env,ret,max_len,begin):
 
-    global_ep = restore_model(agents)
+    # global_ep = restore_model(agents)
     # global_ep = restore_model(agents,"./used_model/38000")
 
     try:

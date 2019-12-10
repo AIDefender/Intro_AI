@@ -138,8 +138,9 @@ def train(agents,env,ret,max_len,begin):
 
 def evaluate(agents,env):
 
-    global_ep = restore_model(agents)
-    # global_ep = restore_model(agents,"./used_model/38000")
+    # global_ep = restore_model(agents)
+    logging.info("Evaluation Begins...")
+    global_ep = restore_model(agents,"./used_model/146000")
 
     ret = []
 
@@ -178,7 +179,7 @@ def main(unused_argv):
 
         agents = init_agents(sess,info_state_size,num_actions,hidden_layers_sizes,**kwargs)
 
-        train(agents,env,ret,max_len, begin)
+        # train(agents,env,ret,max_len, begin)
 
         ret = evaluate(agents,env)
 

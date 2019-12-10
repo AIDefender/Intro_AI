@@ -1,0 +1,1 @@
+used_model/146000:0.078 reward when evaluation; slightly better than random.
