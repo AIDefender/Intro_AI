@@ -95,6 +95,7 @@ class DQN:
                  player_id,
                  state_representation_size,
                  num_actions,
+                 cnn_parameters,
                  hidden_layers_sizes,
                  replay_buffer_capacity=10000,
                  batch_size=128,
@@ -157,11 +158,13 @@ class DQN:
             name="legal_actions_mask_ph")
 
         # self._q_network = snt.nets.MLP(output_sizes=self._layer_sizes)
-        self._q_network_cnn = snt.nets.ConvNet2D([4,8,16],[3,3,3],[1,1,1],["SAME","VALID","VALID"]) # 5,5,4
-        self._q_network_mlp = snt.nets.MLP(output_sizes=[num_actions])
+        # self._q_network_cnn = snt.nets.ConvNet2D([4,8,16,32],[3,3,3,3],[1,1,1,1],["SAME","SAME","SAME","VALID"]) # 5,5,4
+        self._q_network_cnn = snt.nets.ConvNet2D(cnn_parameters[0],cnn_parameters[1],cnn_parameters[2],cnn_parameters[3]) # 5,5,4
+        self._q_network_mlp = snt.nets.MLP(output_sizes=self._layer_sizes)
         self._q_values = self._q_network_mlp(tf.layers.flatten(self._q_network_cnn((self._info_state_ph))))
-        self._target_q_network_cnn = snt.nets.ConvNet2D([4,8,16],[3,3,3],[1,1,1],["SAME","VALID","VALID"]) # 5,5,4
-        self._target_q_network_mlp = snt.nets.MLP(output_sizes=[num_actions])
+        # self._target_q_network_cnn = snt.nets.ConvNet2D([4,8,16,32],[3,3,3,3],[1,1,1,1],["SAME","SAME","SAME","VALID"]) # 5,5,4
+        self._target_q_network_cnn = snt.nets.ConvNet2D(cnn_parameters[0],cnn_parameters[1],cnn_parameters[2],cnn_parameters[3]) # 5,5,4
+        self._target_q_network_mlp = snt.nets.MLP(output_sizes=self._layer_sizes)
         self._target_q_values = self._target_q_network_mlp(tf.layers.flatten(self._target_q_network_cnn((self._info_state_ph))))
 
         # Stop gradient to prevent updates to the target network while learning
