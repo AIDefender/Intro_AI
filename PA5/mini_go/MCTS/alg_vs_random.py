@@ -205,7 +205,7 @@ def stat(ret,begin):
 
 def main(unused_argv):
 
-
+    logging.info("Train on " + fmt_output_channels())
 
     env, info_state_size,num_actions, begin = init_env()
     cnn_parameters, hidden_layers_sizes, kwargs, ret, max_len = init_hyper_paras()
