@@ -2,7 +2,7 @@ from absl import logging, flags, app
 from environment.GoEnv import Go
 import time, os
 import numpy as np
-from algorimths.dqn import DQN
+from algorithms.dqn import DQN
 import tensorflow as tf
 
 FLAGS = flags.FLAGS

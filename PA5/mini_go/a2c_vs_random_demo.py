@@ -2,7 +2,7 @@ from absl import logging, flags, app
 from environment.GoEnv import Go
 import time, os
 import numpy as np
-from algorimths.policy_gradient import PolicyGradient
+from algorithms.policy_gradient import PolicyGradient
 import tensorflow as tf
 
 FLAGS = flags.FLAGS
