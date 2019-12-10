@@ -72,7 +72,7 @@ def prt_logs(ep,agents,ret,begin):
 
     losses = agents[0].loss
     logging.info("Episodes: {}: Losses: {}, Rewards: {}".format(ep + 1, losses, np.mean(ret)))
-    with open('logs/log_{}_{}'.format(os.environ.get('BOARD_SIZE'), "dqn_vs_rand"), 'a+') as log_file:
+    with open('../logs/log_{}_{}'.format(os.environ.get('BOARD_SIZE'), "dqn_cnn_vs_rand"), 'a+') as log_file:
         log_file.writelines("{}, {}\n".format(ep+1, np.mean(ret)))
 
 def save_model(ep,agents):
