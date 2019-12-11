@@ -13,7 +13,7 @@ from utils import get_max_idx
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer("num_train_episodes", 500000,
+flags.DEFINE_integer("num_train_episodes", 400000,
                      "Number of training episodes for each base policy.")
 flags.DEFINE_integer("num_eval", 1000,
                      "Number of evaluation episodes")
@@ -38,12 +38,14 @@ flags.DEFINE_bool("use_dqn",bool(True),"use dqn or not. If set to false, use a2c
 def use_dqn():
     return FLAGS.use_dqn 
 
-def fmt_output_channels():
+def fmt_hyperparameters():
 
     fmt = ""
     for i in FLAGS.output_channels:
         fmt += '_{}'.format(i)
 
+    for i in FLAGS.hidden_layers_sizes:
+        fmt += '_{}'.format(i)
 
     return fmt
 
@@ -93,14 +95,14 @@ def prt_logs(ep,agents,ret,begin):
 
     losses = agents[0].loss
     logging.info("Episodes: {}: Losses: {}, Rewards: {}".format(ep + 1, losses, np.mean(ret)))
-    with open('../logs/log_{}_{}'.format(os.environ.get('BOARD_SIZE'), "dqn_cnn_vs_rand"+fmt_output_channels()), 'a+') as log_file:
+    with open('../logs/log_{}_{}'.format(os.environ.get('BOARD_SIZE'), "dqn_cnn_vs_rand"+fmt_hyperparameters()), 'a+') as log_file:
         log_file.writelines("{}, {}\n".format(ep+1, np.mean(ret)))
 
 def save_model(ep,agents):
 
-    if not os.path.exists("../saved_model/CNN_DQN"+fmt_output_channels()):
-        os.mkdir('../saved_model/CNN_DQN'+fmt_output_channels())
-    agents[0].save(checkpoint_root='../saved_model/CNN_DQN'+fmt_output_channels(), checkpoint_name='{}'.format(ep+1))
+    if not os.path.exists("../saved_model/CNN_DQN"+fmt_hyperparameters()):
+        os.mkdir('../saved_model/CNN_DQN'+fmt_hyperparameters())
+    agents[0].save(checkpoint_root='../saved_model/CNN_DQN'+fmt_hyperparameters(), checkpoint_name='{}'.format(ep+1))
 
     print("Model Saved!")
 
@@ -112,14 +114,14 @@ def restore_model(agents,path=None):
             agents[0].restore(path)
             idex = path.split("/")[-1]
         else:
-            idex = get_max_idx("../saved_model/CNN_DQN"+fmt_output_channels())
-            path = os.path.join("../saved_model/CNN_DQN"+fmt_output_channels(),str(idex))
+            idex = get_max_idx("../saved_model/CNN_DQN"+fmt_hyperparameters())
+            path = os.path.join("../saved_model/CNN_DQN"+fmt_hyperparameters(),str(idex))
             agents[0].restore(path)
 
         logging.info("Agent model restored at {}".format(path))
 
     except:
-
+        print(sys.exc_info())
         logging.info("Train From Scratch!!")
         idex = 0
 
@@ -128,6 +130,8 @@ def restore_model(agents,path=None):
 
 
 def train(agents,env,ret,max_len,begin):
+
+    logging.info("Train on " + fmt_hyperparameters())
 
     global_ep = 0
     global_ep = restore_model(agents)
@@ -138,6 +142,7 @@ def train(agents,env,ret,max_len,begin):
         for ep in range(FLAGS.num_train_episodes):
 
             if (ep + 1) % FLAGS.eval_every == 0:
+    # logging.info("Train on " + fmt_output_channels())
 
                 prt_logs(global_ep+ep,agents,ret,begin)
 
@@ -146,6 +151,7 @@ def train(agents,env,ret,max_len,begin):
                 save_model(global_ep+ep,agents)
 
             time_step = env.reset()  # a go.Position object
+            i = 0
 
             while not time_step.last():
 
@@ -153,6 +159,10 @@ def train(agents,env,ret,max_len,begin):
                 agent_output = agents[player_id].step(time_step)
                 action_list = agent_output.action
                 time_step = env.step(action_list)
+
+                i+=1
+
+            logging.info("Timestep in one game: {}".format(i))
 
             for agent in agents:
 
@@ -172,8 +182,9 @@ def train(agents,env,ret,max_len,begin):
 
 def evaluate(agents,env):
 
-    global_ep = restore_model(agents)
-    # global_ep = restore_model(agents,"./used_model/38000")
+    # global_ep = restore_model(agents)
+    # global_ep = restore_model(agents,"../used_model/125000") # ! Good Model!!! 2,2,4,4,8,16; 32,64,14 
+    global_ep = restore_model(agents,"../used_model/160000") # ! Good Model!!! 2,2,4,4,8,16; 32,64,14 winning rate:72%
 
     ret = []
 
@@ -205,7 +216,7 @@ def stat(ret,begin):
 
 def main(unused_argv):
 
-    logging.info("Train on " + fmt_output_channels())
+    # logging.info("Train on " + fmt_output_channels())
 
     env, info_state_size,num_actions, begin = init_env()
     cnn_parameters, hidden_layers_sizes, kwargs, ret, max_len = init_hyper_paras()

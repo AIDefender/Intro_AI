@@ -1,4 +1,2 @@
-model_checkpoint_path: "15000"
+model_checkpoint_path: "5000"
 all_model_checkpoint_paths: "5000"
-all_model_checkpoint_paths: "10000"
-all_model_checkpoint_paths: "15000"
