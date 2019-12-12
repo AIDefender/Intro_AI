@@ -106,7 +106,7 @@ def init_agents(sess,info_state_size,num_actions, cnn_parameters, hidden_layers_
                         cnn_parameters, hidden_layers_sizes, **kwargs) 
     else:
         with tf.name_scope("rival"):  
-            rival = PolicyGradient(sess, 0, info_state_size**0.5, num_actions,
+            rival = PolicyGradient(sess, 1, info_state_size**0.5, num_actions,
                                     cnn_parameters, hidden_layers_sizes, **kwargs)
             # sess.run(tf.local_variables_initializer())
         with tf.name_scope("self"):
@@ -125,7 +125,7 @@ def init_agents(sess,info_state_size,num_actions, cnn_parameters, hidden_layers_
                 for (self_v, rival_v) in zip(self_.variable_list,rival.variable_list)
             ])
     sess.run(restore_agent_op)
-    
+
     # agents[SELF_AGENT].restore(rival_path)
     # agents[RIVAL_AGENT].restore(rival_path)
 

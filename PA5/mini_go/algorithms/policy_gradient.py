@@ -256,6 +256,24 @@ class PolicyGradient(object):
 
         self._saver = tf.train.Saver(var_list = self.variable_list)
 
+    def value_fn(self,time_step, player_id):
+        # FIXME: UNTESTED!
+
+        info_state = time_step.observations["info_state"][player_id]
+        info_state = np.reshape(info_state,(-1,5,5,1))
+        return self._session.run(
+            self._baseline, feed_dict={self._info_state_ph:info_state}
+        )
+
+    def policy_fn(self,time_step, player_id):
+
+        # print("In a2c, player id:",player_id)
+        info_state = time_step.observations["info_state"][player_id]
+        legal_actions = time_step.observations["legal_actions"][player_id]
+        _, probs = self._act(info_state, legal_actions, is_evaluation=True)
+
+        # print([i for i in zip(range(len(probs)),probs)])
+        return [i for i in zip(range(len(probs)),probs)]
 
     def save(self, checkpoint_root, checkpoint_name):
         save_prefix = os.path.join(checkpoint_root, checkpoint_name)

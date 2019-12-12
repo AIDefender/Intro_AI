@@ -303,6 +303,16 @@ class DQN:
             for (target_v, v) in zip(target_variables, variables)
         ])
 
+    def policy_fn(self,time_step, player_id):
+
+        # print("In dqn,palyer id:",player_id)
+        info_state = time_step.observations["info_state"][player_id]
+        legal_actions = time_step.observations["legal_actions"][player_id]
+        epsilon = self._get_epsilon(is_evaluation=True)
+        _ , probs = self._epsilon_greedy(info_state, legal_actions, epsilon)
+
+        return [i for i in zip(range(len(probs)),probs)]
+
     def _epsilon_greedy(self, info_state, legal_actions, epsilon):
         """Returns a valid epsilon-greedy action and valid action probs.
 

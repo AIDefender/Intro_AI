@@ -443,14 +443,15 @@ class Position():
     def get_liberties(self):
         return self.lib_tracker.liberty_cache
 
-    def play_move(self, c, color=None, mutate=False):
+    def play_move(self, action, add_flag = False, color=None, mutate=False):
         # Obeys CGOS Rules of Play. In short:
         # No suicides
         # Chinese/area scoring
         # Positional superko (this is very crudely approximate at the moment.)
+        c = coords.from_flat(action)
         if color is None:
             color = self.to_play
-
+        # coords.
         pos = self if mutate else copy.deepcopy(self)
 
         if c is None:
@@ -458,9 +459,20 @@ class Position():
             return pos
 
         if not self.is_move_legal(c):
-            raise IllegalMove("{} move at {} is illegal: \n{}".format(
-                "Black" if self.to_play == BLACK else "White",
-                coords.to_gtp(c), self))
+            import copy
+            action_cpy = copy.deepcopy(action)
+            if not add_flag:
+                try:
+                    self.play_move(action_cpy-1,mutate=True)
+                except:
+                    self.play_move(action_cpy+1,mutate=True, add_flag=True)
+            else:
+                self.play_move(action_cpy+1,mutate=True, add_flag=True)
+            return
+            # raise IllegalMove("{} move at {} is illegal: \n{}".format(
+            #     "Black" if self.to_play == BLACK else "White",
+            #     coords.to_gtp(c), self))
+            # pass
 
         potential_ko = is_koish(self.board, c)
 

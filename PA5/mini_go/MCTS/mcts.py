@@ -1,6 +1,6 @@
 import numpy as np
 from operator import itemgetter
-
+import copy
 
 class TreeNode(object):
 
@@ -21,7 +21,7 @@ class TreeNode(object):
 
     def select(self):
 
-        return max(self._children.iteritems(), key=lambda act_node: act_node[1].get_value())
+        return max(self._children.items(), key=lambda act_node: act_node[1].get_value())
 
     def update(self, leaf_value, c_puct):
 
@@ -66,59 +66,77 @@ class MCTS(object):
         self._rollout_limit = rollout_limit
         self._L = playout_depth
         self._n_playout = n_playout
+        self._player_id = 0
+        # self._env = env 
 
-    def _playout(self, state, leaf_depth):
+    def _exchange_player(self):
+
+        self._player_id = 1 if self._player_id == 0 else 0
+
+    def _playout(self, state, env, leaf_depth):
 
         node = self._root
         for i in range(leaf_depth):
             # Only expand node if it has not already been done. Existing nodes already know their
             # prior.
             if node.is_leaf():
-                action_probs = self._policy(state)
+                action_probs = self._policy(state, self._player_id)
+                # print(action_probs)
                 # Check for end of game.
                 if len(action_probs) == 0:
                     break
                 node.expand(action_probs)
             # Greedily select next move.
             action, node = node.select()
-            state.do_move(action)
+            # state.do_move(action)
+            state = env.step(action)
+            self._exchange_player()
+
 
         # Evaluate the leaf using a weighted combination of the value network, v, and the game's
         # winner, z, according to the rollout policy. If lmbda is equal to 0 or 1, only one of
         # these contributes and the other may be skipped. Both v and z are from the perspective
         # of the current player (+1 is good, -1 is bad).
-        v = self._value(state) if self._lmbda < 1 else 0
-        z = self._evaluate_rollout(state, self._rollout_limit) if self._lmbda > 0 else 0
+        v = self._value(state, self._player_id) if self._lmbda < 1 else 0
+        z = self._evaluate_rollout(state, env, self._rollout_limit) if self._lmbda > 0 else 0
         leaf_value = (1 - self._lmbda) * v + self._lmbda * z
 
         # Update value and visit count of nodes in this traversal.
         node.update_recursive(leaf_value, self._c_puct)
 
-    def _evaluate_rollout(self, state, limit):
+    def _evaluate_rollout(self, state, env, limit):
         """Use the rollout policy to play until the end of the game, returning +1 if the current
         player wins, -1 if the opponent wins, and 0 if it is a tie.
         """
-        player = state.get_current_player()
+        player = state.observations["current_player"]
         for i in range(limit):
-            action_probs = self._rollout(state)
-            if len(action_probs) == 0:
-                break
+            action_probs = self._rollout(state, self._player_id)
+            # if len(action_probs) == 0:
+            #     break
             max_action = max(action_probs, key=itemgetter(1))[0]
-            state.do_move(max_action)
+            # state.do_move(max_action)
+            state = env.step(max_action)
+            self._exchange_player()
+            if state.last():
+                break
         else:
             # If no break from the loop, issue a warning.
             print("WARNING: rollout reached move limit")
-        return 1 if state.get_winner_color() == player else -1
+        
+        return state.rewards[0]
 
-    def get_move(self, state):
+    def get_move(self, state, env):
+
+        self._player_id = 0
 
         for n in range(self._n_playout):
-            state_copy = state.copy()
-            self._playout(state_copy, self._L)
+            state_copy = copy.deepcopy(state)
+            env_cpy = copy.deepcopy(env)
+            self._playout(state_copy, env_cpy, self._L)
 
         # chosen action is the *most visited child*, not the highest-value one
         # (they are the same as self._n_playout gets large).
-        return max(self._root._children.iteritems(), key=lambda act_node: act_node[1]._n_visits)[0]
+        return max(self._root._children.items(), key=lambda act_node: act_node[1]._n_visits)[0]
 
     def update_with_move(self, last_move):
         """Step forward in the tree, keeping everything we already know about the subtree, assuming
