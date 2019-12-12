@@ -305,6 +305,7 @@ class DQN:
 
     def policy_fn(self,time_step, player_id):
 
+        player_id = time_step.observations["current_player"]
         # print("In dqn,palyer id:",player_id)
         info_state = time_step.observations["info_state"][player_id]
         legal_actions = time_step.observations["legal_actions"][player_id]

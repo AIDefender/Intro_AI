@@ -459,6 +459,7 @@ class Position():
             return pos
 
         if not self.is_move_legal(c):
+            # print("Warning: illegal move")
             import copy
             action_cpy = copy.deepcopy(action)
             if not add_flag:

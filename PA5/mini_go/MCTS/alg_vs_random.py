@@ -163,8 +163,8 @@ def train(agents,env,ret,max_len,begin):
     logging.info("Train on " + fmt_hyperparameters())
 
     global_ep = 0
-    global_ep = restore_model(agents)
-    # global_ep = restore_model(agents,"./used_model/38000")
+    # global_ep = restore_model(agents)
+    global_ep = restore_model(agents,"../used_model/a2c_CNN/602704")
 
     try:
 

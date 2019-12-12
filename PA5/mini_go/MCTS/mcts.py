@@ -55,7 +55,7 @@ class MCTS(object):
 
 
     def __init__(self, value_fn, policy_fn, rollout_policy_fn, lmbda=0.5, c_puct=5,
-                 rollout_limit=100, playout_depth=20, n_playout=100):
+                 rollout_limit=100, playout_depth=10, n_playout=100):
 
         self._root = TreeNode(None, 1.0)
         self._value = value_fn
@@ -119,9 +119,9 @@ class MCTS(object):
             self._exchange_player()
             if state.last():
                 break
-        else:
-            # If no break from the loop, issue a warning.
-            print("WARNING: rollout reached move limit")
+        # else:
+        #     # If no break from the loop, issue a warning.
+        #     print("WARNING: rollout reached move limit")
         
         return state.rewards[0]
 

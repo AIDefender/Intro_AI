@@ -104,12 +104,26 @@ def init_agents(sess,
                 dqn_kwargs,
                 a2c_kwargs):
 
-    rollout_module = DQN(sess, 0, info_state_size, num_actions, **dqn_kwargs) 
     policy_module = PolicyGradient(sess, 0, info_state_size**0.5, num_actions,**a2c_kwargs)
+    rollout_module = PolicyGradient(sess, 0, info_state_size**0.5, num_actions,**a2c_kwargs)
+    # rollout_module = DQN(sess, 0, info_state_size, num_actions, **dqn_kwargs) 
+    sess.run(tf.global_variables_initializer())
     
+    policy_module.restore("../used_model/a2c_CNN/602704")
+    # rollout_module.restore("../used_model/38000")
+    restore_agent_op = tf.group([
+                tf.assign(rollout_v, policy_v) 
+                for (rollout_v, policy_v) in zip(rollout_module.variable_list,policy_module.variable_list)
+            ])
+    sess.run(restore_agent_op)
+
     # TODO: load parameters
     agents = [MCTSAgent(policy_module,rollout_module), agent.RandomAgent(1)]
-    sess.run(tf.global_variables_initializer())
+
+    logging.info("MCTS INIT OK!!")
+
+    
+
 
     return agents 
 
