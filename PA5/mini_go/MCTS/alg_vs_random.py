@@ -13,7 +13,7 @@ from utils import get_max_idx
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer("num_train_episodes", 400000,
+flags.DEFINE_integer("num_train_episodes", 200000,
                      "Number of training episodes for each base policy.")
 flags.DEFINE_integer("num_eval", 1000,
                      "Number of evaluation episodes")
@@ -24,16 +24,16 @@ flags.DEFINE_integer("learn_every", 128,
 flags.DEFINE_integer("save_every", 5000,
                      "Episode frequency at which the agents save the policies.")
 flags.DEFINE_list("output_channels",[
-    4,8,16,32
+    2,2,4,4,8,8,16
 ],"")
 flags.DEFINE_list("hidden_layers_sizes", [
-    128, 
+    32,64,32
 ], "Number of hidden units in the net.")
 flags.DEFINE_integer("replay_buffer_capacity", int(5e4),
                      "Size of the replay buffer.")
 flags.DEFINE_integer("reservoir_buffer_capacity", int(2e6),
                      "Size of the reservoir buffer.")
-flags.DEFINE_bool("use_dqn",bool(True),"use dqn or not. If set to false, use a2c")
+flags.DEFINE_bool("use_dqn",False,"use dqn or not. If set to false, use a2c")
 
 def use_dqn():
     return FLAGS.use_dqn 
@@ -43,6 +43,8 @@ def fmt_hyperparameters():
     fmt = ""
     for i in FLAGS.output_channels:
         fmt += '_{}'.format(i)
+
+    fmt += '**'
 
     for i in FLAGS.hidden_layers_sizes:
         fmt += '_{}'.format(i)
@@ -69,24 +71,43 @@ def init_hyper_paras():
     cnn_parameters = [FLAGS.output_channels,kernel_shapes,strides,paddings]
 
     hidden_layers_sizes = [int(l) for l in FLAGS.hidden_layers_sizes]
-    kwargs = {
-        "replay_buffer_capacity": FLAGS.replay_buffer_capacity,
-        "epsilon_decay_duration": int(0.6*FLAGS.num_train_episodes),
-        "epsilon_start": 0.8,
-        "epsilon_end": 0.001,
-        "learning_rate": 2e-4,
-        "learn_every": FLAGS.learn_every,
-        "batch_size": 256,
-        "max_global_gradient_norm": 10,
-    }
+
+    if use_dqn():
+
+        kwargs = {
+            "replay_buffer_capacity": FLAGS.replay_buffer_capacity,
+            "epsilon_decay_duration": int(0.6*FLAGS.num_train_episodes),
+            "epsilon_start": 0.8,
+            "epsilon_end": 0.001,
+            "learning_rate": 2e-4,
+            "learn_every": FLAGS.learn_every,
+            "batch_size": 256,
+            "max_global_gradient_norm": 10,
+        }
+
+    else:
+        kwargs = {
+            "pi_learning_rate": 3e-4,
+            "critic_learning_rate": 1e-3,
+            "batch_size": 128,
+            "entropy_cost": 0.5,
+            "max_global_gradient_norm": 20,
+        }
     ret = [0]
     max_len = 2000
 
     return cnn_parameters, hidden_layers_sizes, kwargs, ret, max_len
 
 def init_agents(sess,info_state_size,num_actions, cnn_parameters, hidden_layers_sizes,**kwargs):
-    agents = [DQN(sess, 0, info_state_size**0.5, num_actions,
-                    cnn_parameters, hidden_layers_sizes, **kwargs), agent.RandomAgent(1)]
+
+    if use_dqn():
+        Algorithm = DQN(sess, 0, info_state_size**0.5, num_actions,
+                        cnn_parameters, hidden_layers_sizes, **kwargs) 
+    else:
+        Algorithm = PolicyGradient(sess, 0, info_state_size**0.5, num_actions,
+                                   cnn_parameters, hidden_layers_sizes, **kwargs)
+    
+    agents = [Algorithm, agent.RandomAgent(1)]
     sess.run(tf.global_variables_initializer())
 
     return agents 
@@ -95,27 +116,34 @@ def prt_logs(ep,agents,ret,begin):
 
     losses = agents[0].loss
     logging.info("Episodes: {}: Losses: {}, Rewards: {}".format(ep + 1, losses, np.mean(ret)))
-    with open('../logs/log_{}_{}'.format(os.environ.get('BOARD_SIZE'), "dqn_cnn_vs_rand"+fmt_hyperparameters()), 'a+') as log_file:
+
+    alg_tag = "dqn_cnn_vs_rand" if use_dqn() else "a2c_cnn_vs_rnd"
+
+    with open('../logs/log_{}_{}'.format(os.environ.get('BOARD_SIZE'), alg_tag+fmt_hyperparameters()), 'a+') as log_file:
         log_file.writelines("{}, {}\n".format(ep+1, np.mean(ret)))
 
 def save_model(ep,agents):
 
-    if not os.path.exists("../saved_model/CNN_DQN"+fmt_hyperparameters()):
-        os.mkdir('../saved_model/CNN_DQN'+fmt_hyperparameters())
-    agents[0].save(checkpoint_root='../saved_model/CNN_DQN'+fmt_hyperparameters(), checkpoint_name='{}'.format(ep+1))
+
+    alg_tag = "../saved_model/CNN_DQN" if use_dqn() else "../saved_model/CNN_A2C"
+
+    if not os.path.exists(alg_tag+fmt_hyperparameters()):
+        os.mkdir(alg_tag+fmt_hyperparameters())
+    agents[0].save(checkpoint_root=alg_tag+fmt_hyperparameters(), checkpoint_name='{}'.format(ep+1))
 
     print("Model Saved!")
 
 def restore_model(agents,path=None):
 
+    alg_tag = "../saved_model/CNN_DQN" if use_dqn() else "../saved_model/CNN_A2C"
     try:
 
         if path:
             agents[0].restore(path)
             idex = path.split("/")[-1]
         else:
-            idex = get_max_idx("../saved_model/CNN_DQN"+fmt_hyperparameters())
-            path = os.path.join("../saved_model/CNN_DQN"+fmt_hyperparameters(),str(idex))
+            idex = get_max_idx(alg_tag+fmt_hyperparameters())
+            path = os.path.join(alg_tag+fmt_hyperparameters(),str(idex))
             agents[0].restore(path)
 
         logging.info("Agent model restored at {}".format(path))
@@ -151,7 +179,7 @@ def train(agents,env,ret,max_len,begin):
                 save_model(global_ep+ep,agents)
 
             time_step = env.reset()  # a go.Position object
-            i = 0
+            # i = 0
 
             while not time_step.last():
 
@@ -160,9 +188,9 @@ def train(agents,env,ret,max_len,begin):
                 action_list = agent_output.action
                 time_step = env.step(action_list)
 
-                i+=1
+                # i+=1
 
-            logging.info("Timestep in one game: {}".format(i))
+            # logging.info("Timestep in one game: {}".format(i))
 
             for agent in agents:
 
@@ -182,9 +210,9 @@ def train(agents,env,ret,max_len,begin):
 
 def evaluate(agents,env):
 
-    # global_ep = restore_model(agents)
+    global_ep = restore_model(agents)
     # global_ep = restore_model(agents,"../used_model/125000") # ! Good Model!!! 2,2,4,4,8,16; 32,64,14 
-    global_ep = restore_model(agents,"../used_model/160000") # ! Good Model!!! 2,2,4,4,8,16; 32,64,14 winning rate:72%
+    # global_ep = restore_model(agents,"../used_model/160000") # ! Good Model!!! 2,2,4,4,8,16; 32,64,14 winning rate:72%
 
     ret = []
 
