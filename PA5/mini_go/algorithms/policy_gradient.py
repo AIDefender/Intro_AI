@@ -186,12 +186,15 @@ class PolicyGradient(object):
 
         
         torso_out = mlp_net(tf.layers.flatten(cnn_net(self._info_state_ph,is_training=True)),is_training=True)
+        torso_out_eval = mlp_net(tf.layers.flatten(cnn_net(self._info_state_ph,is_training=False)),is_training=False)
 
 
         self._policy_logits = policy_head(torso_out)
+        self._policy_logits_eval = policy_head(torso_out_eval)
 
 
         self._policy_probs = tf.nn.softmax(self._policy_logits)
+        self._policy_probs_eval = tf.nn.softmax(self._policy_logits_eval)
 
         # Add baseline (V) head for A2C.
         if loss_class.__name__ == "BatchA2CLoss":
@@ -264,11 +267,15 @@ class PolicyGradient(object):
         self._saver.restore(self._session, save_path)
 
 
-    def _act(self, info_state, legal_actions):
+    def _act(self, info_state, legal_actions, is_evaluation):
         # make a singleton batch for NN compatibility: [1, info_state_size]
         info_state = np.reshape(info_state, [-1,5,5,1])
-        policy_probs = self._session.run(
-            self._policy_probs, feed_dict={self._info_state_ph: info_state})
+        if is_evaluation:
+            policy_probs = self._session.run(
+                self._policy_probs_eval, feed_dict={self._info_state_ph: info_state})
+        else:
+            policy_probs = self._session.run(
+                self._policy_probs, feed_dict={self._info_state_ph: info_state})
 
         # Remove illegal actions, re-normalize probs
         probs = np.zeros(self._num_actions)
@@ -291,7 +298,7 @@ class PolicyGradient(object):
         if not time_step.last() and self.player_id == time_step.current_player():
             info_state = time_step.observations["info_state"][self.player_id]
             legal_actions = time_step.observations["legal_actions"][self.player_id]
-            action, probs = self._act(info_state, legal_actions)
+            action, probs = self._act(info_state, legal_actions, is_evaluation)
         else:
             action = None
             probs = []

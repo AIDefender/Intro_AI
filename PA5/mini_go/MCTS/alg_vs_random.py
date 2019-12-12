@@ -24,10 +24,10 @@ flags.DEFINE_integer("learn_every", 128,
 flags.DEFINE_integer("save_every", 5000,
                      "Episode frequency at which the agents save the policies.")
 flags.DEFINE_list("output_channels",[
-    2,2,4,4,8,8,16
+    2,4,8,16,32
 ],"")
 flags.DEFINE_list("hidden_layers_sizes", [
-    32,64,32
+    32,64,14
 ], "Number of hidden units in the net.")
 flags.DEFINE_integer("replay_buffer_capacity", int(5e4),
                      "Size of the replay buffer.")
@@ -210,7 +210,7 @@ def train(agents,env,ret,max_len,begin):
 
 def evaluate(agents,env):
 
-    global_ep = restore_model(agents)
+    global_ep = restore_model(agents,"../saved_model/CNN_A2C_2_4_8_16_32**_32_64_14/225000")
     # global_ep = restore_model(agents,"../used_model/125000") # ! Good Model!!! 2,2,4,4,8,16; 32,64,14 
     # global_ep = restore_model(agents,"../used_model/160000") # ! Good Model!!! 2,2,4,4,8,16; 32,64,14 winning rate:72%
 
@@ -221,7 +221,7 @@ def evaluate(agents,env):
         while not time_step.last():
             player_id = time_step.observations["current_player"]
             if player_id == 0:
-                agent_output = agents[player_id].step(time_step, is_evaluation=True, add_transition_record=False)
+                agent_output = agents[player_id].step(time_step, is_evaluation=True)
             else:
                 agent_output = agents[player_id].step(time_step)
             action_list = agent_output.action
@@ -229,7 +229,7 @@ def evaluate(agents,env):
 
         # Episode is over, step all agents with final info state.
         # for agent in agents:
-        agents[0].step(time_step, is_evaluation=True, add_transition_record=False)
+        agents[0].step(time_step, is_evaluation=True)
         agents[1].step(time_step)
         ret.append(time_step.rewards[0])    
 
@@ -253,7 +253,7 @@ def main(unused_argv):
 
         agents = init_agents(sess,info_state_size,num_actions, cnn_parameters, hidden_layers_sizes,**kwargs)
 
-        train(agents,env,ret,max_len, begin)
+        # train(agents,env,ret,max_len, begin)
 
         ret = evaluate(agents,env)
 
