@@ -251,12 +251,10 @@ class PolicyGradient(object):
 
         self._pi_learn_step = minimize_with_clipping(pi_optimizer, self._pi_loss)
 
-        self._saver = tf.train.Saver(var_list = list(cnn_net.variables)
-                                        + list(mlp_net.variables)
-                                        + list(policy_head.variables)
-                                        + list(value_head.variables)
-                                        + critic_optimizer.variables()
-                                        + pi_optimizer.variables())
+        self.variable_list =  list(cnn_net.variables) + list(mlp_net.variables) + list(policy_head.variables) \
+                                + list(value_head.variables) + critic_optimizer.variables() + pi_optimizer.variables()
+
+        self._saver = tf.train.Saver(var_list = self.variable_list)
 
 
     def save(self, checkpoint_root, checkpoint_name):
@@ -284,7 +282,7 @@ class PolicyGradient(object):
         action = np.random.choice(len(probs), p=probs)
         return action, probs
 
-    def step(self, time_step, is_evaluation=False):
+    def step(self, time_step, is_evaluation=False, is_rival=False):
         """Returns the action to be taken and updates the network if needed.
 
         Args:
@@ -295,6 +293,14 @@ class PolicyGradient(object):
           A `StepOutput` containing the action probs and chosen action.
         """
         # Act step: don't act at terminal info states or if its not our turn.
+
+        if is_rival:
+            info_state = time_step.observations["info_state"][self.player_id]
+            legal_actions = time_step.observations["legal_actions"][self.player_id]
+            action, probs = self._act(info_state, legal_actions, is_evaluation=True)
+
+            return StepOutput(action=action, probs=probs)
+
         if not time_step.last() and self.player_id == time_step.current_player():
             info_state = time_step.observations["info_state"][self.player_id]
             legal_actions = time_step.observations["legal_actions"][self.player_id]

@@ -9,8 +9,9 @@ from algorithms.policy_gradient import PolicyGradient
 from algorithms.dqn_cnn import DQN
 import agent.agent as agent
 from utils import get_max_idx
-
-
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+SELF_AGENT = 0
+RIVAL_AGENT = 1
 FLAGS = flags.FLAGS
 
 flags.DEFINE_integer("num_train_episodes", 200000,
@@ -34,7 +35,6 @@ flags.DEFINE_integer("replay_buffer_capacity", int(5e4),
 flags.DEFINE_integer("reservoir_buffer_capacity", int(2e6),
                      "Size of the reservoir buffer.")
 flags.DEFINE_bool("use_dqn",False,"use dqn or not. If set to false, use a2c")
-flags.DEFINE_float("lr",2e-4,"lr")
 
 def use_dqn():
     return FLAGS.use_dqn 
@@ -80,7 +80,7 @@ def init_hyper_paras():
             "epsilon_decay_duration": int(0.6*FLAGS.num_train_episodes),
             "epsilon_start": 0.8,
             "epsilon_end": 0.001,
-            "learning_rate": FLAGS.lr,
+            "learning_rate": 2e-4,
             "learn_every": FLAGS.learn_every,
             "batch_size": 256,
             "max_global_gradient_norm": 10,
@@ -99,17 +99,37 @@ def init_hyper_paras():
 
     return cnn_parameters, hidden_layers_sizes, kwargs, ret, max_len
 
-def init_agents(sess,info_state_size,num_actions, cnn_parameters, hidden_layers_sizes,**kwargs):
+def init_agents(sess,info_state_size,num_actions, cnn_parameters, hidden_layers_sizes, rival_path, **kwargs):
 
     if use_dqn():
         Algorithm = DQN(sess, 0, info_state_size**0.5, num_actions,
                         cnn_parameters, hidden_layers_sizes, **kwargs) 
     else:
-        Algorithm = PolicyGradient(sess, 0, info_state_size**0.5, num_actions,
-                                   cnn_parameters, hidden_layers_sizes, **kwargs)
+        with tf.name_scope("rival"):  
+            rival = PolicyGradient(sess, 0, info_state_size**0.5, num_actions,
+                                    cnn_parameters, hidden_layers_sizes, **kwargs)
+            # sess.run(tf.local_variables_initializer())
+        with tf.name_scope("self"):
+            self_ = PolicyGradient(sess, 0, info_state_size**0.5, num_actions,
+                                    cnn_parameters, hidden_layers_sizes, **kwargs)
+            # sess.run(tf.local_variables_initializer())
+            # self_.restore(rival_path)
     
-    agents = [Algorithm, agent.RandomAgent(1)]
+    agents = [self_, rival]
+    # agents = [rival,self_]
     sess.run(tf.global_variables_initializer())
+    rival.restore(rival_path)
+
+    restore_agent_op = tf.group([
+                tf.assign(self_v, rival_v) 
+                for (self_v, rival_v) in zip(self_.variable_list,rival.variable_list)
+            ])
+    sess.run(restore_agent_op)
+    
+    # agents[SELF_AGENT].restore(rival_path)
+    # agents[RIVAL_AGENT].restore(rival_path)
+
+    logging.info("Load self and rival agents ok!!")
 
     return agents 
 
@@ -120,13 +140,13 @@ def prt_logs(ep,agents,ret,begin):
 
     alg_tag = "dqn_cnn_vs_rand" if use_dqn() else "a2c_cnn_vs_rnd"
 
-    with open('../logs/log_{}_{}'.format(os.environ.get('BOARD_SIZE'), alg_tag+fmt_hyperparameters()), 'a+') as log_file:
+    with open('current_logs/log_{}_{}'.format(os.environ.get('BOARD_SIZE'), alg_tag+fmt_hyperparameters()), 'a+') as log_file:
         log_file.writelines("{}, {}\n".format(ep+1, np.mean(ret)))
 
 def save_model(ep,agents):
 
 
-    alg_tag = "../saved_model/CNN_DQN" if use_dqn() else "../saved_model/CNN_A2C"
+    alg_tag = "current_models/CNN_DQN" if use_dqn() else "current_models/CNN_A2C"
 
     if not os.path.exists(alg_tag+fmt_hyperparameters()):
         os.mkdir(alg_tag+fmt_hyperparameters())
@@ -136,7 +156,7 @@ def save_model(ep,agents):
 
 def restore_model(agents,path=None):
 
-    alg_tag = "../saved_model/CNN_DQN" if use_dqn() else "../saved_model/CNN_A2C"
+    alg_tag = "current_models/CNN_DQN" if use_dqn() else "current_models/CNN_A2C"
     try:
 
         if path:
@@ -151,7 +171,7 @@ def restore_model(agents,path=None):
 
     except:
         print(sys.exc_info())
-        logging.info("Train From Scratch!!")
+        logging.info("No saved Model!!")
         idex = 0
 
 
@@ -185,10 +205,10 @@ def train(agents,env,ret,max_len,begin):
             while not time_step.last():
 
                 player_id = time_step.observations["current_player"]
-                agent_output = agents[player_id].step(time_step)
+                agent_output = agents[player_id].step(time_step, is_rival=(player_id==RIVAL_AGENT))
                 action_list = agent_output.action
+                # print(player_id)
                 # print(action_list)
-                # print()
                 time_step = env.step(action_list)
 
                 # i+=1
@@ -254,7 +274,9 @@ def main(unused_argv):
 
     with tf.Session() as sess:
 
-        agents = init_agents(sess,info_state_size,num_actions, cnn_parameters, hidden_layers_sizes,**kwargs)
+        rival_path = "rivals/a2c_0" 
+        rival_model = os.path.join(rival_path,str(get_max_idx(rival_path)))
+        agents = init_agents(sess,info_state_size,num_actions, cnn_parameters, hidden_layers_sizes, rival_model, **kwargs)
 
         train(agents,env,ret,max_len, begin)
 
