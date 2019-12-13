@@ -35,6 +35,8 @@ flags.DEFINE_integer("reservoir_buffer_capacity", int(2e6),
                      "Size of the reservoir buffer.")
 flags.DEFINE_bool("use_dqn",False,"use dqn or not. If set to false, use a2c")
 flags.DEFINE_float("lr",2e-4,"lr")
+flags.DEFINE_integer("pd",10, "playout_depth")
+flags.DEFINE_integer("np",100, "n_playout")
 
 def use_dqn():
     return FLAGS.use_dqn 
@@ -118,7 +120,8 @@ def init_agents(sess,
     sess.run(restore_agent_op)
 
     # TODO: load parameters
-    agents = [MCTSAgent(policy_module,rollout_module), agent.RandomAgent(1)]
+    agents = [MCTSAgent(policy_module,rollout_module,playout_depth = FLAGS.pd, n_playout = FLAGS.np), 
+              MCTSAgent(None,None)]
 
     logging.info("MCTS INIT OK!!")
 
@@ -188,8 +191,8 @@ def evaluate(agents,env):
                 action_list = agent_output
                 # print(action_list)
             else:
-                agent_output = agents[player_id].step(time_step)
-                action_list = agent_output.action
+                agent_output = agents[player_id].step(time_step,env)
+                action_list = agent_output
             time_step = env.step(action_list)
 
         # Episode is over, step all agents with final info state.

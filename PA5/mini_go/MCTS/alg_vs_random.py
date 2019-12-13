@@ -13,7 +13,7 @@ from utils import get_max_idx
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer("num_train_episodes", 200000,
+flags.DEFINE_integer("num_train_episodes", 1000000,
                      "Number of training episodes for each base policy.")
 flags.DEFINE_integer("num_eval", 1000,
                      "Number of evaluation episodes")
@@ -163,8 +163,8 @@ def train(agents,env,ret,max_len,begin):
     logging.info("Train on " + fmt_hyperparameters())
 
     global_ep = 0
-    # global_ep = restore_model(agents)
-    global_ep = restore_model(agents,"../used_model/a2c_CNN/602704")
+    global_ep = restore_model(agents)
+    # global_ep = restore_model(agents,"../used_model/a2c_CNN/602704")
 
     try:
 
@@ -247,7 +247,7 @@ def stat(ret,begin):
 
 def main(unused_argv):
 
-    # logging.info("Train on " + fmt_output_channels())
+    logging.info("Train on " + fmt_output_channels())
 
     env, info_state_size,num_actions, begin = init_env()
     cnn_parameters, hidden_layers_sizes, kwargs, ret, max_len = init_hyper_paras()

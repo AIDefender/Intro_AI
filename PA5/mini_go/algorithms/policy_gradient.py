@@ -175,9 +175,7 @@ class PolicyGradient(object):
                                      strides = cnn_parameters[2],
                                      paddings = cnn_parameters[3],
                                      normalization_ctor=snt.BatchNormV2,
-                                    #  normalization_kwargs={"is_training":True},
                                      activate_final=True)
-                                    #  is_training = True) 
 
         mlp_net = snt.nets.MLP(output_sizes=self._layer_sizes,activate_final=True)
 
@@ -197,6 +195,8 @@ class PolicyGradient(object):
         self._policy_probs_eval = tf.nn.softmax(self._policy_logits_eval)
 
         # Add baseline (V) head for A2C.
+
+        # ! 显示对使用的网络进行赋值,方便后续保存.
         if loss_class.__name__ == "BatchA2CLoss":
             value_head = snt.Linear(output_size=1, name="baseline")
             self._baseline = tf.squeeze(value_head(torso_out), axis=1)
@@ -269,7 +269,7 @@ class PolicyGradient(object):
     def policy_fn(self,time_step, player_id):
 
         # print("In a2c, player id:",player_id)
-        player_id = time_step.observations["current_player"]
+        # player_id = time_step.observations["current_player"]
         info_state = time_step.observations["info_state"][player_id]
         legal_actions = time_step.observations["legal_actions"][player_id]
         _, probs = self._act(info_state, legal_actions, is_evaluation=True)

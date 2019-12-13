@@ -165,9 +165,7 @@ class DQN:
         self._q_network_cnn = snt.nets.ConvNet2D(output_channels = cnn_parameters[0],
                                                  kernel_shapes = cnn_parameters[1],
                                                  strides = cnn_parameters[2],
-                                                 paddings = cnn_parameters[3],
-                                     normalization_kwargs={"is_training":True},
-                                                 normalization_ctor=snt.BatchNormV2) 
+                                                 paddings = cnn_parameters[3])
 
         self._q_network_mlp = snt.nets.MLP(output_sizes=self._layer_sizes)
         self._q_values = self._q_network_mlp(tf.layers.flatten(self._q_network_cnn((self._info_state_ph))))
@@ -175,9 +173,7 @@ class DQN:
         self._target_q_network_cnn = snt.nets.ConvNet2D(output_channels = cnn_parameters[0],
                                                         kernel_shapes = cnn_parameters[1],
                                                         strides = cnn_parameters[2],
-                                     normalization_kwargs={"is_training":True},
-                                                        paddings = cnn_parameters[3],
-                                                        normalization_ctor=snt.BatchNormV2) 
+                                                        paddings = cnn_parameters[3])
 
         self._target_q_network_mlp = snt.nets.MLP(output_sizes=self._layer_sizes)
         self._target_q_values = self._target_q_network_mlp(tf.layers.flatten(self._target_q_network_cnn((self._info_state_ph))))

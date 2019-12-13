@@ -21,6 +21,7 @@ def show(title):
 
 stat("../logs/log_5_a2c_cnn_vs_rnd_2_4_8_16_32**_32_64_14","mlp sizes 32, 64, 14")
 stat("../logs/log_5_a2c_cnn_vs_rnd_2_4_8_16_32**_32_64_32","mlp sizes 32, 64, 32")
+show("Different sizes of mlp layers")
 stat("../logs/log_5_a2c_cnn_vs_rnd_2_4_8_16_32**_32_32","mlp sizes 32, 32")
 stat("../logs/log_5_a2c_cnn_vs_rnd_2_4_8_16_32**_64_64","mlp sizes 64, 64")
 show("Different sizes of mlp layers")

@@ -116,7 +116,6 @@ def init_agents(sess,info_state_size,num_actions, cnn_parameters, hidden_layers_
             # self_.restore(rival_path)
     
     agents = [self_, rival]
-    # agents = [rival,self_]
     sess.run(tf.global_variables_initializer())
     rival.restore(rival_path)
 
@@ -274,7 +273,10 @@ def main(unused_argv):
 
     with tf.Session() as sess:
 
-        rival_path = "rivals/a2c_0" 
+        # rival_path = "rivals/a2c_0" 
+        # rival_path = "../saved_model/CNN_A2C_2_2_4_4_8_8_16**_32_64_32" 
+        rival_path = "../saved_model/CNN_A2C"+fmt_hyperparameters() 
+
         rival_model = os.path.join(rival_path,str(get_max_idx(rival_path)))
         agents = init_agents(sess,info_state_size,num_actions, cnn_parameters, hidden_layers_sizes, rival_model, **kwargs)
 
